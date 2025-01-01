@@ -12,6 +12,11 @@ python = "^3.13"
 ruff = "^0.8.4"
 pre-commit = "^4.0.1"
 
+
+[tool.poetry.group.research.dependencies]
+jupyter = "^1.1.1"
+pandas = "^2.2.3"
+
 [tool.ruff.lint]
 select = [
     # pycodestyle
