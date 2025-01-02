@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
-sqlalchemy = { extras = ["postgresql-psycopgbinary"], version = "^2.0.36" }
+sqlalchemy = { extras = ["postgresql-psycopgbinary", "asyncio"], version = "^2.0.36" }
 alembic = "^1.14.0"
 jupyter = "^1.1.1"
 pandas = "^2.2.3"

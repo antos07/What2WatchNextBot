@@ -55,7 +55,7 @@ class Base(orm.DeclarativeBase, sa_async.AsyncAttrs):
             else:
                 at_least_one_attached_attribute = True
         if at_least_one_attached_attribute:
-            return f"{self.__class__.__name__}({','.join(field_strings)})"
+            return f"{self.__class__.__name__}({', '.join(field_strings)})"
         return f"<{self.__class__.__name__} {id(self)}>"
 
 
@@ -81,6 +81,9 @@ class Genre(Base):
         secondary=genre_title_table, back_populates="genres"
     )
 
+    def __repr__(self) -> str:
+        return self._repr(id=self.id, name=self.name)
+
 
 class Title(Base):
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
@@ -93,6 +96,17 @@ class Title(Base):
     genres: orm.Mapped[set["Genre"]] = orm.relationship(
         secondary=genre_title_table, back_populates="titles"
     )
+
+    def __repr__(self) -> str:
+        return self._repr(
+            id=self.id,
+            title=self.title,
+            type=self.type,
+            start_year=self.start_year,
+            end_year=self.end_year,
+            rating=self.rating,
+            votes=self.votes,
+        )
 
     @property
     def imdb_id(self) -> str:
