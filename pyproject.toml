@@ -7,17 +7,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
-sqlalchemy = {extras = ["postgresql-psycopgbinary"], version = "^2.0.36"}
+sqlalchemy = { extras = ["postgresql-psycopgbinary"], version = "^2.0.36" }
 alembic = "^1.14.0"
+jupyter = "^1.1.1"
+pandas = "^2.2.3"
+notebook = "^7.3.2"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.4"
 pre-commit = "^4.0.1"
-
-
-[tool.poetry.group.research.dependencies]
-jupyter = "^1.1.1"
-pandas = "^2.2.3"
 
 [tool.ruff.lint]
 select = [
