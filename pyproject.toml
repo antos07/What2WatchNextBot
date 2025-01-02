@@ -12,6 +12,7 @@ alembic = "^1.14.0"
 jupyter = "^1.1.1"
 pandas = "^2.2.3"
 notebook = "^7.3.2"
+aiogram = "~3.17"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.4"

@@ -111,3 +111,11 @@ class Title(Base):
     @property
     def imdb_id(self) -> str:
         return f"tt{self.id:0>7}"
+
+    @property
+    def imdb_url(self) -> str:
+        return f"https://www.imdb.com/title/{self.imdb_id}"
+
+
+class User(Base):
+    id: orm.Mapped[int] = orm.mapped_column(sa.BigInteger, primary_key=True)
