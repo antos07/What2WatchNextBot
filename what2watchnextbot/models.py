@@ -117,5 +117,16 @@ class Title(Base):
         return f"https://www.imdb.com/title/{self.imdb_id}"
 
 
+selected_genres_tabel = sa.Table(
+    "selected_genres",
+    Base.metadata,
+    sa.Column("genre_id", sa.Integer, sa.ForeignKey("genre.id"), primary_key=True),
+    sa.Column("user_id", sa.BigInteger, sa.ForeignKey("user.id"), primary_key=True),
+)
+
+
 class User(Base):
     id: orm.Mapped[int] = orm.mapped_column(sa.BigInteger, primary_key=True)
+    selected_genres: orm.Mapped[set[Genre]] = orm.relationship(
+        secondary=selected_genres_tabel
+    )
