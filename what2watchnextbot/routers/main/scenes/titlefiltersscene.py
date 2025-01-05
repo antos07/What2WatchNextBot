@@ -1,11 +1,10 @@
-from venv import logger
-
 import aiogram.filters.callback_data as cd
 import aiogram.types
 import aiogram.utils.formatting as fmt
 import aiogram.utils.keyboard as kb
 import sqlalchemy.ext.asyncio as async_sa
 from aiogram.fsm.scene import Scene, on
+from loguru import logger
 
 from what2watchnextbot import models
 from what2watchnextbot.genrepreferences import GenrePreferences
@@ -99,8 +98,9 @@ class TitleFilterScene(Scene, state="title_filter"):
         genre_preferences: GenrePreferences,
     ) -> None:
         text = fmt.as_section(
-            fmt.Italic("Select Genres"),
-            "Requires a title to have at least one of the selected genres",
+            fmt.Underline("Genres"),
+            "Select genre(s) that you interested in. "
+            "Suggested titles will have at least one of them.",
         ).as_kwargs()
         reply_markup = await self._build_genre_selector_reply_markup(genre_preferences)
         await message.answer(**text, reply_markup=reply_markup)
