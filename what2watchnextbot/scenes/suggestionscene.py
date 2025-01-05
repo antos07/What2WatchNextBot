@@ -9,16 +9,12 @@ from what2watchnextbot import models, suggestions
 from what2watchnextbot.scenes.titlefiltersscene import TitleFilterScene
 
 
-class SuggestionScene(Scene):
+class SuggestionScene(Scene, state="suggestions"):
     SKIP_BUTTON = "Maybe Later"
     WATCHED_BUTTON = "Already Watched"
     UNINTERESTED_BUTTON = "Uninterested"
     SETTINGS_BUTTON = "Settings"
     TRY_AGAIN_BUTTON = "Try Again"
-
-    @on.message(aiogram.filters.CommandStart())
-    async def on_first_enter(self, message: aiogram.types.Message):
-        await self.wizard.goto(TitleFilterScene)
 
     @on.message.enter()
     @on.message(aiogram.F.text == SKIP_BUTTON)
@@ -31,11 +27,14 @@ class SuggestionScene(Scene):
         session: async_sa.AsyncSession,
         current_user: models.User,
     ) -> None:
-        await self._answer_with_suggestion(
-            message=message,
-            session=session,
-            current_user=current_user,
-        )
+        if current_user.last_settings_update_at is None:
+            await self.wizard.goto(TitleFilterScene)
+        else:
+            await self._answer_with_suggestion(
+                message=message,
+                session=session,
+                current_user=current_user,
+            )
 
     @on.message(aiogram.F.text == SETTINGS_BUTTON)
     async def on_open_settings(self, message: aiogram.types.Message) -> None:

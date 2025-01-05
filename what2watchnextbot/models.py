@@ -1,3 +1,4 @@
+import datetime
 import enum
 import typing
 
@@ -127,6 +128,15 @@ selected_genres_tabel = sa.Table(
 
 class User(Base):
     id: orm.Mapped[int] = orm.mapped_column(sa.BigInteger, primary_key=True)
+    last_settings_update_at: orm.Mapped[datetime.datetime | None]
     selected_genres: orm.Mapped[set[Genre]] = orm.relationship(
         secondary=selected_genres_tabel
     )
+
+    def __repr__(self) -> str:
+        return self._repr(
+            id=self.id, last_settings_update_at=self.last_settings_update_at
+        )
+
+    def record_settings_update(self) -> None:
+        self.last_settings_update_at = datetime.datetime.now()

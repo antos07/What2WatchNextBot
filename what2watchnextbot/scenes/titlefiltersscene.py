@@ -29,7 +29,11 @@ class TitleFilterScene(Scene, state="title_filter"):
         current_user: models.User,
     ):
         genre_preferences = GenrePreferences(session, current_user)
+
         await self._answer_with_settings_menu(message, genre_preferences)
+
+        current_user.record_settings_update()
+        await session.commit()
 
     @on.callback_query(SelectGenreCD.filter())
     async def on_selected_genre(
@@ -52,6 +56,9 @@ class TitleFilterScene(Scene, state="title_filter"):
             message=callback_query.message, genre_preferences=preferences
         )
 
+        current_user.record_settings_update()
+        await session.commit()
+
     @on.callback_query(SelectAllGenresCD.filter())
     async def on_select_all_genres(
         self,
@@ -70,6 +77,9 @@ class TitleFilterScene(Scene, state="title_filter"):
         await session.commit()
 
         await self._update_genre_selector(callback_query.message, preferences)
+
+        current_user.record_settings_update()
+        await session.commit()
 
     @on.message(aiogram.F.text == CLOSE_SETTINGS_BTN)
     async def on_close(self, message: aiogram.types.Message):

@@ -1,12 +1,13 @@
 import aiogram.filters
-import aiogram.fsm.scene as scenes
+import aiogram.fsm.scene as scene
+import aiogram.types
 
 from what2watchnextbot import database, models
 from what2watchnextbot.scenes.suggestionscene import SuggestionScene
 from what2watchnextbot.scenes.titlefiltersscene import TitleFilterScene
 
 dispatcher = aiogram.Dispatcher()
-scene_registry = scenes.SceneRegistry(dispatcher)
+scene_registry = scene.SceneRegistry(dispatcher)
 scene_registry.add(
     TitleFilterScene,
     SuggestionScene,
@@ -33,6 +34,11 @@ async def save_current_user(handler, update, data):
 
     data["current_user"] = current_user
     await handler(update, data)
+
+
+@dispatcher.message(aiogram.filters.CommandStart())
+async def start(message: aiogram.types.Message, scenes: scene.ScenesManager):
+    await scenes.enter(SuggestionScene)
 
 
 @dispatcher.shutdown()
