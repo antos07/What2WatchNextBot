@@ -191,6 +191,9 @@ ignored_titles_table = sa.Table(
 class User(Base):
     id: orm.Mapped[int] = orm.mapped_column(sa.BigInteger, primary_key=True)
     last_settings_update_at: orm.Mapped[datetime.datetime | None]
+    require_all_selected_genres: orm.Mapped[bool] = orm.mapped_column(
+        default=False, server_default=sa.false()
+    )
     selected_genres: orm.Mapped[set[Genre]] = orm.relationship(
         secondary=selected_genres_tabel
     )

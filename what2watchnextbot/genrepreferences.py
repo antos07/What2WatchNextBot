@@ -54,3 +54,12 @@ class GenrePreferences:
             raise ValueError(msg)
 
         return genre
+
+    async def require_all_selected_genres(self) -> None:
+        self.user.require_all_selected_genres = True
+
+    async def require_one_selected_genre(self) -> None:
+        self.user.require_all_selected_genres = False
+
+    async def check_all_selected_genres_are_required(self) -> bool:
+        return self.user.require_all_selected_genres

@@ -19,6 +19,10 @@ class SelectAllGenresCD(cd.CallbackData, prefix="select_all_genres"):
     selected: bool
 
 
+class SetGenreCombinatorModeCD(cd.CallbackData, prefix="set_genre_combinator_mode"):
+    require_all: bool
+
+
 class TitleFilterScene(Scene, state="title_filter"):
     CLOSE_SETTINGS_BTN = "Close Settings"
 
@@ -87,6 +91,31 @@ class TitleFilterScene(Scene, state="title_filter"):
         current_user.record_settings_update()
         await session.commit()
 
+    @on.callback_query(SetGenreCombinatorModeCD.filter())
+    async def on_set_genre_combinator_mode(
+        self,
+        callback_query: aiogram.types.CallbackQuery,
+        callback_data: SetGenreCombinatorModeCD,
+        session: async_sa.AsyncSession,
+        current_user: models.User,
+    ) -> None:
+        preferences = GenrePreferences(session, current_user)
+
+        if callback_data.require_all:
+            await preferences.require_all_selected_genres()
+            logger.info("Require all selected genres")
+        else:
+            await preferences.require_one_selected_genre()
+            logger.info("Require one selected genre")
+        await session.commit()
+
+        await self._update_genre_combinator_selector(
+            message=callback_query.message, genre_preferences=preferences
+        )
+
+        current_user.record_settings_update()
+        await session.commit()
+
     @on.message(aiogram.F.text == CLOSE_SETTINGS_BTN)
     async def on_close(self, message: aiogram.types.Message):
         logger.debug("Closing settings")
@@ -99,8 +128,7 @@ class TitleFilterScene(Scene, state="title_filter"):
     ) -> None:
         text = fmt.as_section(
             fmt.Underline("Genres"),
-            "Select genre(s) that you interested in. "
-            "Suggested titles will have at least one of them.",
+            "Select genre(s) that you interested in.",
         ).as_kwargs()
         reply_markup = await self._build_genre_selector_reply_markup(genre_preferences)
         await message.answer(**text, reply_markup=reply_markup)
@@ -142,6 +170,7 @@ class TitleFilterScene(Scene, state="title_filter"):
     ):
         await self._answer_with_settings_title(message)
         await self._answer_with_genre_selector(message, genre_preferences)
+        await self._answer_with_genre_combinator_selector(message, genre_preferences)
 
     async def _answer_with_settings_title(self, message: aiogram.types.Message):
         text = fmt.Bold("Settings").as_kwargs()
@@ -158,4 +187,47 @@ class TitleFilterScene(Scene, state="title_filter"):
         genre_preferences: GenrePreferences,
     ):
         reply_markup = await self._build_genre_selector_reply_markup(genre_preferences)
+        await message.edit_reply_markup(reply_markup=reply_markup)
+
+    async def _answer_with_genre_combinator_selector(
+        self,
+        message: aiogram.types.Message,
+        genre_preferences: GenrePreferences,
+    ) -> None:
+        text = fmt.as_section(
+            fmt.Underline("How to combine genres?"),
+            "Require titles to have ",
+            fmt.Italic("all"),
+            " or ",
+            fmt.Italic("at least 1"),
+            " of the selected genres.",
+        ).as_kwargs()
+        reply_markup = await self._build_genre_combinator_selector_reply_markup(
+            genre_preferences
+        )
+
+        await message.answer(**text, reply_markup=reply_markup)
+
+    @staticmethod
+    async def _build_genre_combinator_selector_reply_markup(
+        genre_preferences: GenrePreferences,
+    ) -> aiogram.types.InlineKeyboardMarkup:
+        builder = kb.InlineKeyboardBuilder()
+        if await genre_preferences.check_all_selected_genres_are_required():
+            builder.button(
+                text="All", callback_data=SetGenreCombinatorModeCD(require_all=False)
+            )
+        else:
+            builder.button(
+                text="At Least 1",
+                callback_data=SetGenreCombinatorModeCD(require_all=True),
+            )
+        return builder.as_markup()
+
+    async def _update_genre_combinator_selector(
+        self, message: aiogram.types.Message, genre_preferences: GenrePreferences
+    ) -> None:
+        reply_markup = await self._build_genre_combinator_selector_reply_markup(
+            genre_preferences
+        )
         await message.edit_reply_markup(reply_markup=reply_markup)

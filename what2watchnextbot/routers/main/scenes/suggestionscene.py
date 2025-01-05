@@ -157,4 +157,4 @@ class SuggestionScene(Scene, state="suggestions"):
         text = text.as_kwargs()
         reply_markup = reply_markup.as_markup(resize_keyboard=True)
         await message.answer(**text, reply_markup=reply_markup)
-        logger.info(f"Displayed suggested title id={title.id}")
+        logger.info(f"Displayed suggested title id={title.id if title else None}")

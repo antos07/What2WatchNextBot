@@ -31,6 +31,10 @@ def _format(record):
     if record["extra"]:
         format_ += " | <level>{extra}</level>"
     format_ += "\n"
+
+    if "exception" in record:
+        format_ += "{exception}\n"
+
     return format_
 
 
