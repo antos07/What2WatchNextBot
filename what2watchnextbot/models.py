@@ -69,8 +69,20 @@ class TitleTypes(enum.Enum):
 genre_title_table = sa.Table(
     "genre_title_table",
     Base.metadata,
-    sa.Column("genre_id", sa.Integer, sa.ForeignKey("genre.id"), primary_key=True),
-    sa.Column("title_id", sa.Integer, sa.ForeignKey("title.id"), primary_key=True),
+    sa.Column(
+        "genre_id",
+        sa.Integer,
+        sa.ForeignKey("genre.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    sa.Column(
+        "title_id",
+        sa.Integer,
+        sa.ForeignKey("title.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
 )
 
 
@@ -121,8 +133,20 @@ class Title(Base):
 selected_genres_tabel = sa.Table(
     "selected_genres",
     Base.metadata,
-    sa.Column("genre_id", sa.Integer, sa.ForeignKey("genre.id"), primary_key=True),
-    sa.Column("user_id", sa.BigInteger, sa.ForeignKey("user.id"), primary_key=True),
+    sa.Column(
+        "genre_id",
+        sa.Integer,
+        sa.ForeignKey("genre.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
 )
 
 
