@@ -19,8 +19,6 @@ class SuggestionScene(Scene, state="suggestions"):
     @on.message.enter()
     @on.message(aiogram.F.text == SKIP_BUTTON)
     @on.message(aiogram.F.text == TRY_AGAIN_BUTTON)
-    @on.message(aiogram.F.text == UNINTERESTED_BUTTON)
-    @on.message(aiogram.F.text == WATCHED_BUTTON)
     async def on_new_suggestion_request(
         self,
         message: aiogram.types.Message,
@@ -39,6 +37,70 @@ class SuggestionScene(Scene, state="suggestions"):
                 session=session,
                 current_user=current_user,
             )
+
+    @on.message(aiogram.F.text == WATCHED_BUTTON)
+    async def on_watched_title(
+        self,
+        message: aiogram.types.Message,
+        session: async_sa.AsyncSession,
+        current_user: models.User,
+    ) -> None:
+        logger.debug("Handling watched title")
+
+        title_id: int = await self.wizard.get_value("last_title_id")
+        logger.debug(f"{title_id=}")
+        if title_id is None:
+            logger.error('"last_title_id" was not found in the current state')
+            await self._answer_with_suggestion(
+                message=message, session=session, current_user=current_user
+            )
+            return
+
+        title = await session.get_one(models.Title, (title_id,))
+        logger.debug("title={}", title)
+
+        watched_titles = await current_user.awaitable_attrs.watched_titles
+        watched_titles.add(title)
+        await session.commit()
+        logger.info(f"Marked title id={title_id} as watched")
+
+        await self._answer_with_suggestion(
+            message=message,
+            session=session,
+            current_user=current_user,
+        )
+
+    @on.message(aiogram.F.text == UNINTERESTED_BUTTON)
+    async def on_ignored_title(
+        self,
+        message: aiogram.types.Message,
+        session: async_sa.AsyncSession,
+        current_user: models.User,
+    ) -> None:
+        logger.debug("Handling ignored title")
+
+        title_id: int = await self.wizard.get_value("last_title_id")
+        logger.debug(f"{title_id=}")
+        if title_id is None:
+            logger.error('"last_title_id" was not found in the current state')
+            await self._answer_with_suggestion(
+                message=message, session=session, current_user=current_user
+            )
+            return
+
+        title = await session.get_one(models.Title, (title_id,))
+        logger.debug("title={}", title)
+
+        ignored_titles = await current_user.awaitable_attrs.ignored_titles
+        ignored_titles.add(title)
+        await session.commit()
+        logger.info(f"Marked title id={title_id} as ignored")
+
+        await self._answer_with_suggestion(
+            message=message,
+            session=session,
+            current_user=current_user,
+        )
 
     @on.message(aiogram.F.text == SETTINGS_BUTTON)
     async def on_open_settings(self, message: aiogram.types.Message) -> None:
@@ -78,6 +140,9 @@ class SuggestionScene(Scene, state="suggestions"):
                 .button(text=self.SETTINGS_BUTTON)
                 .adjust(3, 1)
             )
+
+            # Save the title ID to be able to use it later
+            await self.wizard.update_data(last_title_id=title.id)
 
         text = text.as_kwargs()
         reply_markup = reply_markup.as_markup(resize_keyboard=True)

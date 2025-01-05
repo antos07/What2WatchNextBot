@@ -11,7 +11,21 @@ async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.T
         sa.select(models.Title.id)
         .join(models.User.selected_genres)
         .join(models.Genre.titles)
-        .where(models.User.id == user.id)
+        .where(
+            models.User.id == user.id,
+            ~sa.select(models.watched_titles_table)
+            .where(
+                models.watched_titles_table.c.title_id == models.Title.id,
+                models.watched_titles_table.c.user_id == user.id,
+            )
+            .exists(),
+            ~sa.select(models.ignored_titles_table)
+            .where(
+                models.ignored_titles_table.c.title_id == models.Title.id,
+                models.ignored_titles_table.c.user_id == user.id,
+            )
+            .exists(),
+        )
     )
     stmt = (
         sa.select(models.Title)

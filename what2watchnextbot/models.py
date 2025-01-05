@@ -149,12 +149,56 @@ selected_genres_tabel = sa.Table(
     ),
 )
 
+watched_titles_table = sa.Table(
+    "watched_titles",
+    Base.metadata,
+    sa.Column(
+        "title_id",
+        sa.Integer,
+        sa.ForeignKey("title.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+ignored_titles_table = sa.Table(
+    "ignored_titles",
+    Base.metadata,
+    sa.Column(
+        "title_id",
+        sa.Integer,
+        sa.ForeignKey("title.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
 
 class User(Base):
     id: orm.Mapped[int] = orm.mapped_column(sa.BigInteger, primary_key=True)
     last_settings_update_at: orm.Mapped[datetime.datetime | None]
     selected_genres: orm.Mapped[set[Genre]] = orm.relationship(
         secondary=selected_genres_tabel
+    )
+    watched_titles: orm.Mapped[set[Title]] = orm.relationship(
+        secondary=watched_titles_table
+    )
+    ignored_titles: orm.Mapped[set[Title]] = orm.relationship(
+        secondary=ignored_titles_table
     )
 
     def __repr__(self) -> str:

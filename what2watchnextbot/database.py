@@ -11,7 +11,7 @@ def setup_async() -> tuple[async_sa.AsyncEngine, Callable[[], async_sa.AsyncSess
     settings = get_settings()
 
     engine = async_sa.create_async_engine(str(settings.POSTGRES_DSN))
-    session_factory = async_sa.async_sessionmaker(bind=engine)
+    session_factory = async_sa.async_sessionmaker(bind=engine, expire_on_commit=False)
     return engine, session_factory
 
 

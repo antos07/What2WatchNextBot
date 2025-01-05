@@ -1,7 +1,7 @@
 import aiogram
 
 from what2watchnextbot import database
-from what2watchnextbot.routers import main, shutdown
+from what2watchnextbot.routers import error, main, shutdown
 
 
 def _setup_database(dispatcher: aiogram.Dispatcher) -> None:
@@ -18,6 +18,7 @@ def create_dispatcher() -> aiogram.Dispatcher:
     dispatcher.include_routers(
         main.router,
         shutdown.router,
+        error.router,
     )
 
     return dispatcher
