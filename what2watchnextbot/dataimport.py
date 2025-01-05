@@ -1,10 +1,14 @@
 import collections.abc as col_abc
 import itertools
 import os
+import pathlib
+import urllib.error
+import urllib.request
 
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import orm
+from tqdm import tqdm
 
 from what2watchnextbot import models
 
@@ -137,3 +141,41 @@ def import_imdb_datasets(
     df = read_dataframe(title_basics_dataset, title_ratings_dataset)
     df = preprocess_dataframe(df)
     write_dataframe_to_db(df, session)
+
+
+IMDB_DATASET_URL_FORMAT = "https://datasets.imdbws.com/{dataset}"
+
+
+def download_dataset(
+    dataset_name: str,
+    output_dir: str | os.PathLike[str],
+    overwrite: bool = False,
+    progress_bar: bool = False,
+) -> os.PathLike[str]:
+    url = IMDB_DATASET_URL_FORMAT.format(dataset=dataset_name)
+
+    if progress_bar:
+        bar = None
+
+        def update_bar(_, size, total):
+            nonlocal bar
+
+            if not bar:
+                bar = tqdm(total=total, unit="B", unit_scale=True, desc=dataset_name)
+            bar.update(size)
+    else:
+        update_bar = None
+
+    download_path = os.path.join(output_dir, dataset_name)
+    if os.path.exists(download_path) and not overwrite:
+        raise FileExistsError(f"{download_path} already exists")
+
+    try:
+        urllib.request.urlretrieve(
+            url, os.path.join(output_dir, dataset_name), reporthook=update_bar
+        )
+    except urllib.error.HTTPError as e:
+        msg = f"Failed to download {dataset_name}: {e}"
+        raise RuntimeError(msg) from e
+
+    return pathlib.Path(download_path)

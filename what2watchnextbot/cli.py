@@ -1,3 +1,5 @@
+import tempfile
+
 import aiogram
 import click
 import dotenv
@@ -6,7 +8,7 @@ from loguru import logger
 
 import alembic.command  # noqa: I001
 import alembic.config
-from what2watchnextbot import logging
+from what2watchnextbot import database, dataimport, logging
 from what2watchnextbot.dispatcher import create_dispatcher
 from what2watchnextbot.settings import get_settings
 
@@ -106,3 +108,24 @@ def polling(ctx):
     bot = aiogram.Bot(ctx.obj["settings"].BOT_TOKEN)
     dispatcher = create_dispatcher()
     dispatcher.run_polling(bot)
+
+
+@cli.command()
+def import_imbd_dataset():
+    """Download and import the IMBD dataset."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        logger.debug("Downloading datasets.")
+        title_basic = dataimport.download_dataset(
+            "title.basics.tsv.gz", tmpdir, progress_bar=True
+        )
+        title_ratings = dataimport.download_dataset(
+            "title.ratings.tsv.gz", tmpdir, progress_bar=True
+        )
+        logger.info("Downloaded datasets successfully.")
+
+        _, session_factory = database.setup_sync()
+        with session_factory() as session:
+            logger.debug("Importing dataset.")
+            dataimport.import_imdb_datasets(session, title_basic, title_ratings)
+            session.commit()
+            logger.success("Dataset imported.")

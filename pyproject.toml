@@ -17,6 +17,7 @@ loguru = "^0.7.3"
 click = "^8.1.8"
 python-dotenv = "^1.0.1"
 pydantic-settings = "^2.7.1"
+tqdm = "^4.67.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.4"
