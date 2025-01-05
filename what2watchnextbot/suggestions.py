@@ -2,8 +2,10 @@ import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as async_sa
 
 from what2watchnextbot import models
+from what2watchnextbot.logging import logger_wraps
 
 
+@logger_wraps()
 async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.Title:
     titles_with_selected_genres_stmt = (
         sa.select(models.Title.id)
@@ -11,7 +13,6 @@ async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.T
         .join(models.Genre.titles)
         .where(models.User.id == user.id)
     )
-
     stmt = (
         sa.select(models.Title)
         .where(
@@ -23,4 +24,5 @@ async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.T
         .order_by(sa.func.random())
         .limit(1)
     )
-    return await session.scalar(stmt)
+    title = await session.scalar(stmt)
+    return title

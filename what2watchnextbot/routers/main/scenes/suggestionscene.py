@@ -3,6 +3,7 @@ import aiogram.utils.formatting as fmt
 import aiogram.utils.keyboard as kb
 import sqlalchemy.ext.asyncio as async_sa
 from aiogram.fsm.scene import Scene, on
+from loguru import logger
 
 from what2watchnextbot import models, suggestions
 from what2watchnextbot.routers.main.scenes.titlefiltersscene import TitleFilterScene
@@ -26,9 +27,13 @@ class SuggestionScene(Scene, state="suggestions"):
         session: async_sa.AsyncSession,
         current_user: models.User,
     ) -> None:
+        logger.debug("Handling new suggestion request")
+
         if current_user.last_settings_update_at is None:
+            logger.debug(f"Entering for the 1st time - going to {TitleFilterScene}")
             await self.wizard.goto(TitleFilterScene)
         else:
+            logger.debug("Reentering - displaying suggestion")
             await self._answer_with_suggestion(
                 message=message,
                 session=session,
@@ -37,6 +42,7 @@ class SuggestionScene(Scene, state="suggestions"):
 
     @on.message(aiogram.F.text == SETTINGS_BUTTON)
     async def on_open_settings(self, message: aiogram.types.Message) -> None:
+        logger.debug("Opening settings")
         await self.wizard.goto(TitleFilterScene)
 
     async def _answer_with_suggestion(
@@ -48,6 +54,7 @@ class SuggestionScene(Scene, state="suggestions"):
         title = await suggestions.suggest(session=session, user=current_user)
 
         if not title:
+            logger.info("No new suggestions")
             text = fmt.Text(
                 "No new suggestions found. Try updating your filter settings"
             )
@@ -75,3 +82,4 @@ class SuggestionScene(Scene, state="suggestions"):
         text = text.as_kwargs()
         reply_markup = reply_markup.as_markup(resize_keyboard=True)
         await message.answer(**text, reply_markup=reply_markup)
+        logger.info(f"Displayed suggested title id={title.id}")

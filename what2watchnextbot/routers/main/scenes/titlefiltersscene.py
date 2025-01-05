@@ -1,3 +1,5 @@
+from venv import logger
+
 import aiogram.filters.callback_data as cd
 import aiogram.types
 import aiogram.utils.formatting as fmt
@@ -31,6 +33,7 @@ class TitleFilterScene(Scene, state="title_filter"):
         genre_preferences = GenrePreferences(session, current_user)
 
         await self._answer_with_settings_menu(message, genre_preferences)
+        logger.info("Displayed settings")
 
         current_user.record_settings_update()
         await session.commit()
@@ -47,8 +50,10 @@ class TitleFilterScene(Scene, state="title_filter"):
 
         if callback_data.selected:
             await preferences.select_genre(callback_data.genre_id)
+            logger.info(f"Selected genre id={callback_data.genre_id}")
         else:
             await preferences.unselect_genre(callback_data.genre_id)
+            logger.info(f"Unselected genre id={callback_data.genre_id}")
 
         await session.commit()
 
@@ -71,8 +76,10 @@ class TitleFilterScene(Scene, state="title_filter"):
 
         if callback_data.selected:
             await preferences.select_all_genres()
+            logger.info("Selected all genres")
         else:
             await preferences.unselect_all_genres()
+            logger.info("Unselected all genres")
 
         await session.commit()
 
@@ -83,6 +90,7 @@ class TitleFilterScene(Scene, state="title_filter"):
 
     @on.message(aiogram.F.text == CLOSE_SETTINGS_BTN)
     async def on_close(self, message: aiogram.types.Message):
+        logger.debug("Closing settings")
         await self.wizard.back()
 
     async def _answer_with_genre_selector(
