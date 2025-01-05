@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 import aiogram.types
 from loguru import logger
 
-from what2watchnextbot import database, models
+from what2watchnextbot import models
 from what2watchnextbot.routers._utils import outer_middleware_for_all_updates
 
 
@@ -61,7 +61,7 @@ async def logging(
 
 @outer_middleware_for_all_updates(router)
 async def provide_sa_session(handler, update, data):
-    data["session"] = database.session_factory()
+    data["session"] = data["session_factory"]()
     async with data["session"]:
         return await handler(update, data)
 

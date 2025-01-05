@@ -14,10 +14,16 @@ pandas = "^2.2.3"
 notebook = "^7.3.2"
 aiogram = "~3.17"
 loguru = "^0.7.3"
+click = "^8.1.8"
+python-dotenv = "^1.0.1"
+pydantic-settings = "^2.7.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.4"
 pre-commit = "^4.0.1"
+
+[tool.poetry.scripts]
+what2watchnextbot = "what2watchnextbot.cli:cli"
 
 [tool.ruff.lint]
 select = [

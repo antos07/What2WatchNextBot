@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 import what2watchnextbot.models
+from what2watchnextbot.settings import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,6 +16,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = what2watchnextbot.models.Base.metadata
+
+settings = get_settings()
+config.set_main_option("sqlalchemy.url", str(settings.POSTGRES_DSN))
 
 
 def run_migrations_offline() -> None:
