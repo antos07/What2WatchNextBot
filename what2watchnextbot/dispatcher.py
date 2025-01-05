@@ -1,7 +1,9 @@
 import aiogram
+from aiogram.fsm.storage.redis import DefaultKeyBuilder, RedisStorage
 
 from what2watchnextbot import database
 from what2watchnextbot.routers import error, main, shutdown
+from what2watchnextbot.settings import get_settings
 
 
 def _setup_database(dispatcher: aiogram.Dispatcher) -> None:
@@ -12,7 +14,11 @@ def _setup_database(dispatcher: aiogram.Dispatcher) -> None:
 
 
 def create_dispatcher() -> aiogram.Dispatcher:
-    dispatcher = aiogram.Dispatcher()
+    storage = RedisStorage.from_url(
+        url=str(get_settings().REDIS_DSN),
+        key_builder=DefaultKeyBuilder(with_bot_id=True, with_destiny=True),
+    )
+    dispatcher = aiogram.Dispatcher(storage=storage)
     _setup_database(dispatcher)
 
     dispatcher.include_routers(

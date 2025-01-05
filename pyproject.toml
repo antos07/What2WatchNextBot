@@ -12,7 +12,7 @@ alembic = "^1.14.0"
 jupyter = "^1.1.1"
 pandas = "^2.2.3"
 notebook = "^7.3.2"
-aiogram = "~3.17"
+aiogram = {version = "~3.17", extras = ["redis"]}
 loguru = "^0.7.3"
 click = "^8.1.8"
 python-dotenv = "^1.0.1"
