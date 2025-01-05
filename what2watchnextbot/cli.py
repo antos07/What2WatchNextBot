@@ -1,14 +1,15 @@
-import tempfile
+import tempfile  # noqa: I001
 
 import aiogram
+import alembic.command
+import alembic.config
 import click
 import dotenv
 import pydantic
+import sqlalchemy as sa
 from loguru import logger
 
-import alembic.command  # noqa: I001
-import alembic.config
-from what2watchnextbot import database, dataimport, logging
+from what2watchnextbot import database, dataimport, logging, models
 from what2watchnextbot.dispatcher import create_dispatcher
 from what2watchnextbot.settings import get_settings
 
@@ -110,8 +111,13 @@ def polling(ctx):
     dispatcher.run_polling(bot)
 
 
-@cli.command()
-def import_imbd_dataset():
+@cli.group()
+def titles():
+    """Actions with titles"""
+
+
+@titles.command("import")
+def import_title_from_imdb():
     """Download and import the IMBD dataset."""
     with tempfile.TemporaryDirectory() as tmpdir:
         logger.debug("Downloading datasets.")
@@ -129,3 +135,19 @@ def import_imbd_dataset():
             dataimport.import_imdb_datasets(session, title_basic, title_ratings)
             session.commit()
             logger.success("Dataset imported.")
+
+
+@titles.command("clear")
+@click.confirmation_option(
+    prompt="Are you sure?",
+)
+def clear_titles():
+    """Remove titles from the database."""
+
+    _, session_factory = database.setup_sync()
+    with session_factory() as session:
+        logger.debug("Clearing titles.")
+        session.execute(sa.delete(models.genre_title_table))
+        session.execute(sa.delete(models.Title))
+        session.commit()
+        logger.success("Removed all titles.")
