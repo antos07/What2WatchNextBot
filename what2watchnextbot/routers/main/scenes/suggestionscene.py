@@ -10,11 +10,11 @@ from what2watchnextbot.routers.main.scenes.titlefiltersscene import TitleFilterS
 
 
 class SuggestionScene(Scene, state="suggestions"):
-    SKIP_BUTTON = "Maybe Later"
-    WATCHED_BUTTON = "Already Watched"
-    UNINTERESTED_BUTTON = "Uninterested"
-    SETTINGS_BUTTON = "Settings"
-    TRY_AGAIN_BUTTON = "Try Again"
+    SKIP_BUTTON = "🔀 Maybe Later"
+    WATCHED_BUTTON = "✔ Already Watched"
+    UNINTERESTED_BUTTON = "❌ Uninterested"
+    SETTINGS_BUTTON = "⚙ Settings"
+    TRY_AGAIN_BUTTON = "🔁 Try Again"
 
     @on.message.enter()
     @on.message(aiogram.F.text == SKIP_BUTTON)
@@ -127,9 +127,19 @@ class SuggestionScene(Scene, state="suggestions"):
                 .adjust(1, 1)
             )
         else:
-            text = fmt.as_section(
-                fmt.Bold(title.title),
-                "\n",
+            text = fmt.as_list(
+                fmt.Bold(fmt.Underline(title.title), f" ({title.start_year})"),
+                "",
+                fmt.as_key_value("Rating", f"⭐ {title.rating:.1f}"),
+                fmt.as_key_value(
+                    "Genres",
+                    ", ".join(
+                        sorted(
+                            genre.name for genre in await title.awaitable_attrs.genres
+                        )
+                    ),
+                ),
+                "",
                 fmt.TextLink("IMDB", url=title.imdb_url),
             )
             reply_markup = (
