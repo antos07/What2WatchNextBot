@@ -3,9 +3,10 @@ import os
 
 import aiogram
 
-import what2watchnextbot.bot
+from what2watchnextbot.dispatcher import create_dispatcher
 
 logging.basicConfig(level=logging.DEBUG)
 
+dispatcher = create_dispatcher()
 bot = aiogram.Bot(os.environ["BOT_TOKEN"])
-what2watchnextbot.bot.dispatcher.run_polling(bot)
+dispatcher.run_polling(bot)

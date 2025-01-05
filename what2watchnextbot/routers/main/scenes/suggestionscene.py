@@ -1,4 +1,3 @@
-import aiogram.filters
 import aiogram.types
 import aiogram.utils.formatting as fmt
 import aiogram.utils.keyboard as kb
@@ -6,7 +5,7 @@ import sqlalchemy.ext.asyncio as async_sa
 from aiogram.fsm.scene import Scene, on
 
 from what2watchnextbot import models, suggestions
-from what2watchnextbot.scenes.titlefiltersscene import TitleFilterScene
+from what2watchnextbot.routers.main.scenes.titlefiltersscene import TitleFilterScene
 
 
 class SuggestionScene(Scene, state="suggestions"):
