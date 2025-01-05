@@ -5,11 +5,11 @@ from what2watchnextbot import models
 
 
 async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.Title:
-    titles_with_selected_genres_subquery = (
+    titles_with_selected_genres_stmt = (
         sa.select(models.Title.id)
         .join(models.User.selected_genres)
         .join(models.Genre.titles)
-        .subquery()
+        .where(models.User.id == user.id)
     )
 
     stmt = (
@@ -19,7 +19,7 @@ async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.T
             models.Title.votes > 10000,
             models.Title.rating >= 6,
         )
-        .where(models.Title.id.in_(titles_with_selected_genres_subquery))
+        .where(models.Title.id.in_(titles_with_selected_genres_stmt))
         .order_by(sa.func.random())
         .limit(1)
     )

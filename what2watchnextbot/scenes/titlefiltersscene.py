@@ -73,7 +73,7 @@ class TitleFilterScene(Scene, state="title_filter"):
 
     @on.message(aiogram.F.text == CLOSE_SETTINGS_BTN)
     async def on_close(self, message: aiogram.types.Message):
-        pass
+        await self.wizard.back()
 
     async def _answer_with_genre_selector(
         self,
