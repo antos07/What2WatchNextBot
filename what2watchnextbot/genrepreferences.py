@@ -41,6 +41,9 @@ class GenrePreferences:
         selected_genres = await self.user.awaitable_attrs.selected_genres
         selected_genres.clear()
 
+    async def list_selected_genres(self) -> Sequence[models.Genre]:
+        return list(await self.user.awaitable_attrs.selected_genres)
+
     async def get_all_genres(self) -> Sequence[models.Genre]:
         stmt = sa.select(models.Genre)
         genres = await self.session.scalars(stmt)

@@ -1,3 +1,4 @@
+import aiogram.exceptions
 import aiogram.filters.callback_data as cd
 import aiogram.types
 import aiogram.utils.formatting as fmt
@@ -121,6 +122,29 @@ class TitleFilterScene(Scene, state="title_filter"):
         logger.debug("Closing settings")
         await self.wizard.back()
 
+    @on.message.leave()
+    async def on_leave(
+        self,
+        message: aiogram.types.Message,
+        bot: aiogram.Bot,
+        event_chat: aiogram.types.Chat,
+        current_user: models.User,
+        session: async_sa.AsyncSession,
+    ) -> None:
+        logger.debug("Leaving settings")
+
+        genre_preferences = GenrePreferences(session, current_user)
+        await self._close_genre_selector(
+            bot=bot, chat_id=event_chat.id, genre_preferences=genre_preferences
+        )
+        await self._close_genre_combinator_selector(
+            bot=bot,
+            chat_id=event_chat.id,
+            genre_preferences=genre_preferences,
+        )
+
+        await self.wizard.clear_data()
+
     async def _answer_with_genre_selector(
         self,
         message: aiogram.types.Message,
@@ -131,7 +155,8 @@ class TitleFilterScene(Scene, state="title_filter"):
             "Select genre(s) that you interested in.",
         ).as_kwargs()
         reply_markup = await self._build_genre_selector_reply_markup(genre_preferences)
-        await message.answer(**text, reply_markup=reply_markup)
+        sent_message = await message.answer(**text, reply_markup=reply_markup)
+        await self._save_message_id(sent_message, "genre_selector_message_id")
 
     @staticmethod
     async def _build_genre_selector_reply_markup(
@@ -179,7 +204,8 @@ class TitleFilterScene(Scene, state="title_filter"):
             .button(text=self.CLOSE_SETTINGS_BTN)
             .as_markup(resize_keyboard=True)
         )
-        await message.answer(**text, reply_markup=reply_markup)
+        sent_message = await message.answer(**text, reply_markup=reply_markup)
+        await self._save_message_id(sent_message, "title_message_id")
 
     async def _update_genre_selector(
         self,
@@ -206,7 +232,8 @@ class TitleFilterScene(Scene, state="title_filter"):
             genre_preferences
         )
 
-        await message.answer(**text, reply_markup=reply_markup)
+        sent_message = await message.answer(**text, reply_markup=reply_markup)
+        await self._save_message_id(sent_message, "genre_combinator_message_id")
 
     @staticmethod
     async def _build_genre_combinator_selector_reply_markup(
@@ -231,3 +258,66 @@ class TitleFilterScene(Scene, state="title_filter"):
             genre_preferences
         )
         await message.edit_reply_markup(reply_markup=reply_markup)
+
+    async def _save_message_id(
+        self, sent_message: aiogram.types.Message, key: str
+    ) -> None:
+        await self.wizard.update_data({key: sent_message.message_id})
+
+    async def _close_genre_selector(
+        self, bot: aiogram.Bot, chat_id: int, genre_preferences: GenrePreferences
+    ) -> None:
+        genres = (
+            genre.name for genre in await genre_preferences.list_selected_genres()
+        )
+        text = fmt.as_section(
+            fmt.Underline("Genres"),
+            "Select genre(s) that you interested in.\n\n",
+            fmt.as_marked_list(*genres, marker="✅ "),
+        )
+
+        try:
+            message_id = await self.wizard.get_value("genre_selector_message_id")
+        except KeyError:
+            logger.error(
+                "Failed to close the genre selector due to missing "
+                '"genre_selector_message_id" key'
+            )
+            return
+
+        with logger.catch(aiogram.exceptions.TelegramBadRequest, level="WARNING"):
+            await bot.edit_message_text(
+                chat_id=chat_id, message_id=message_id, **text.as_kwargs()
+            )
+
+    async def _close_genre_combinator_selector(
+        self, bot: aiogram.Bot, chat_id: int, genre_preferences: GenrePreferences
+    ) -> None:
+        all_selected_genres_are_required = (
+            await genre_preferences.check_all_selected_genres_are_required()
+        )
+        text = fmt.as_section(
+            fmt.Underline("How to combine genres?"),
+            "Require titles to have ",
+            fmt.Italic("all"),
+            " or ",
+            fmt.Italic("at least 1"),
+            " of the selected genres.",
+            "\n\n",
+            "✅ ",
+            "All" if all_selected_genres_are_required else "At Least 1",
+        )
+
+        try:
+            message_id = await self.wizard.get_value("genre_combinator_message_id")
+        except KeyError:
+            logger.error(
+                "Failed to close the genre selector due to missing "
+                '"genre_combinator_message_id" key'
+            )
+            return
+
+        with logger.catch(aiogram.exceptions.TelegramBadRequest, level="WARNING"):
+            await bot.edit_message_text(
+                chat_id=chat_id, message_id=message_id, **text.as_kwargs()
+            )
