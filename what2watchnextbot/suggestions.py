@@ -1,64 +1,82 @@
 import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as async_sa
-import sqlalchemy.orm as orm
+from loguru import logger
 
 from what2watchnextbot import models
 from what2watchnextbot.logging import logger_wraps
 
 
-@logger_wraps()
-async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.Title:
-    title = orm.aliased(models.Title, name="title_1")
+def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
+    """
+    Build a query that selects a list of title IDs, where all the user filters
+    are applied.
 
-    titles_with_selected_genres_stmt = (
-        sa.select(title.id)
-        .join(models.User.selected_genres)
-        .join(title, models.Genre.titles)
+    :param user: A user whose filters should be applied.
+    :return: A select query.
+    """
+
+    stmt = sa.select(models.Title.id)
+
+    # Filtering titles that have at least one of user selected genres
+    stmt = (
+        stmt.join(models.User.selected_genres)
+        .join(models.Genre.titles)
         .where(models.User.id == user.id)
     )
 
     if user.require_all_selected_genres:
-        filtered_title_ids_stmt = titles_with_selected_genres_stmt.where(
-            ~sa.select(models.selected_genres_tabel)
-            .where(
-                models.selected_genres_tabel.c.user_id == user.id,
-                ~sa.select("*")
-                .select_from(models.genre_title_table)
-                .where(
-                    models.genre_title_table.c.title_id == sa.text("title_1.id"),
-                    models.genre_title_table.c.genre_id
-                    == models.selected_genres_tabel.c.genre_id,
-                )
-                .exists(),
-            )
-            .exists()
+        # As the user wants titles that have all the selected genres simultaneously,
+        # I am excluding all the titles that don't have some selected genres.
+        # That means that they occur among the selected titles less times than the
+        # number of selected genres.
+        total_number_of_selected_genres_subquery = (
+            sa.select(sa.func.count())
+            .join(models.User.selected_genres)
+            .where(models.User.id == user.id)
+            .scalar_subquery()
         )
-    else:
-        filtered_title_ids_stmt = titles_with_selected_genres_stmt
+        stmt = stmt.group_by(models.Title.id).having(
+            sa.func.count(models.Genre.id) == total_number_of_selected_genres_subquery
+        )
 
-    filtered_title_ids_stmt = filtered_title_ids_stmt.where(
-        ~sa.select(models.watched_titles_table)
+    # Filtering out watched titles
+    stmt = stmt.where(
+        ~sa.select("*")
+        .select_from(models.watched_titles_table)
         .where(
-            models.watched_titles_table.c.title_id == title.id,
+            models.watched_titles_table.c.title_id == models.Title.id,
             models.watched_titles_table.c.user_id == user.id,
         )
         .exists(),
-        ~sa.select(models.ignored_titles_table)
+    )
+
+    # Filtering out ignored titles
+    stmt = stmt.where(
+        ~sa.select("*")
+        .select_from(models.ignored_titles_table)
         .where(
-            models.ignored_titles_table.c.title_id == title.id,
+            models.ignored_titles_table.c.title_id == models.Title.id,
             models.ignored_titles_table.c.user_id == user.id,
         )
         .exists(),
     )
 
+    # Leaving only movies
+    stmt = stmt.where(models.Title.type == models.TitleTypes.MOVIE)
+
+    # ...with acceptable trustworthy rating
+    stmt = stmt.where(models.Title.votes > 10000, models.Title.rating >= 6.5)
+
+    logger.debug("stmt=\n{}", stmt)
+
+    return stmt
+
+
+@logger_wraps()
+async def suggest(session: async_sa.AsyncSession, user: models.User) -> models.Title:
     stmt = (
         sa.select(models.Title)
-        .where(
-            models.Title.type == models.TitleTypes.MOVIE,
-            models.Title.votes > 10000,
-            models.Title.rating >= 6,
-        )
-        .where(models.Title.id.in_(filtered_title_ids_stmt))
+        .where(models.Title.id.in_(_build_filtered_movie_ids_stmt(user)))
         .order_by(sa.func.random())
         .limit(1)
     )
