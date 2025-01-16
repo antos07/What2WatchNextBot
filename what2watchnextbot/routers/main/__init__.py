@@ -11,13 +11,16 @@ from what2watchnextbot.routers._utils import outer_middleware_for_all_updates
 def _create_router() -> aiogram.Router:
     router = aiogram.Router()
 
-    from . import global_commands, scenes
+    from . import global_commands, scenes, unhandled
 
     router.include_routers(
         global_commands.router,
     )
 
     scenes.register_in_router(router)
+
+    # This one should be the last not to interfere with normal handlers
+    router.include_router(unhandled.router)
 
     return router
 

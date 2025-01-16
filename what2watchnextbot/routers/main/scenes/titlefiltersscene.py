@@ -1,9 +1,12 @@
+from collections.abc import Callable
+
 import aiogram.exceptions
 import aiogram.filters.callback_data as cd
 import aiogram.types
 import aiogram.utils.formatting as fmt
 import aiogram.utils.keyboard as kb
 import sqlalchemy.ext.asyncio as async_sa
+from aiogram.fsm.context import FSMContext
 from aiogram.fsm.scene import Scene, on
 from loguru import logger
 
@@ -24,6 +27,14 @@ class SetGenreCombinatorModeCD(cd.CallbackData, prefix="set_genre_combinator_mod
     require_all: bool
 
 
+def _from_active_menu(message_id_key: str) -> Callable:
+    async def filter(callback_query: aiogram.types.CallbackQuery, state: FSMContext):
+        expected_message_id = await state.get_value(message_id_key)
+        return callback_query.message.message_id == expected_message_id
+
+    return filter
+
+
 class TitleFilterScene(Scene, state="title_filter"):
     CLOSE_SETTINGS_BTN = "Close Settings"
 
@@ -42,7 +53,9 @@ class TitleFilterScene(Scene, state="title_filter"):
         current_user.record_settings_update()
         await session.commit()
 
-    @on.callback_query(SelectGenreCD.filter())
+    @on.callback_query(
+        SelectGenreCD.filter(), _from_active_menu("genre_selector_message_id")
+    )
     async def on_selected_genre(
         self,
         callback_query: aiogram.types.CallbackQuery,
@@ -68,7 +81,9 @@ class TitleFilterScene(Scene, state="title_filter"):
         current_user.record_settings_update()
         await session.commit()
 
-    @on.callback_query(SelectAllGenresCD.filter())
+    @on.callback_query(
+        SelectAllGenresCD.filter(), _from_active_menu("genre_selector_message_id")
+    )
     async def on_select_all_genres(
         self,
         callback_query: aiogram.types.CallbackQuery,
@@ -92,7 +107,10 @@ class TitleFilterScene(Scene, state="title_filter"):
         current_user.record_settings_update()
         await session.commit()
 
-    @on.callback_query(SetGenreCombinatorModeCD.filter())
+    @on.callback_query(
+        SetGenreCombinatorModeCD.filter(),
+        _from_active_menu("genre_combinator_message_id"),
+    )
     async def on_set_genre_combinator_mode(
         self,
         callback_query: aiogram.types.CallbackQuery,
