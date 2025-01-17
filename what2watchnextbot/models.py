@@ -203,6 +203,8 @@ class User(Base):
     ignored_titles: orm.Mapped[set[Title]] = orm.relationship(
         secondary=ignored_titles_table
     )
+    minimum_rating: orm.Mapped[int] = orm.mapped_column(default=6)
+    minimum_votes: orm.Mapped[int] = orm.mapped_column(default=10000)
 
     def __repr__(self) -> str:
         return self._repr(

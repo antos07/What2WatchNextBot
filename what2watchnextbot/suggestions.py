@@ -64,8 +64,11 @@ def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
     # Leaving only movies
     stmt = stmt.where(models.Title.type == models.TitleTypes.MOVIE)
 
-    # ...with acceptable trustworthy rating
-    stmt = stmt.where(models.Title.votes > 10000, models.Title.rating >= 6.5)
+    # Leaving title with selected minimum rating and minimum number of votes
+    stmt = stmt.where(
+        models.Title.votes >= user.minimum_votes,
+        models.Title.rating >= user.minimum_rating,
+    )
 
     logger.debug("stmt=\n{}", stmt)
 

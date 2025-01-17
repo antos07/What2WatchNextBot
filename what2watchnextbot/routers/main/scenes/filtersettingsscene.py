@@ -363,6 +363,60 @@ class GenreCombinatorMenuItem(MenuItem):
         return builder.as_markup()
 
 
+class MinimumRatingCD(cd.CallbackData, prefix="minimum_rating"):
+    """Callback data for selecting minimum title rating.
+
+    :ivar rating: The minimum rating.
+    """
+
+    rating: int
+
+
+class MinimumRatingMenuItem(MenuItem):
+    """A menu item that provides title minimum rating preferences.
+
+    :cvar fsm_key: It is a key by which the menu state is stored
+        in the FSM context data.
+    :cvar text: It is a static text of the menu item.
+
+    :ivar bot: A bot that manages the menu item.
+    :ivar chat: A chat, where the menu item is displayed.
+    :ivar state: The FSM context.
+    :ivar genre_preferences: A genre preferences manager.
+
+    :param bot: A bot that manages the menu item.
+    :param chat: A chat, where the menu item is displayed.
+    :param state: The FSM context.
+    :param genre_preferences: A genre preferences manager.
+    """
+
+    fsm_key = "minimum_rating"
+    text = fmt.as_section(
+        fmt.Underline("Minimum Rating"),
+        "Set the minimum rating you want titles to have.",
+    )
+
+    async def build_keyboard(self) -> kb.InlineKeyboardMarkup:
+        builder = kb.InlineKeyboardBuilder()
+
+        current_minimum_rating = await self.genre_preferences.get_minimum_rating()
+
+        buttons = [(f"{rating}+", rating) for rating in range(5, 10)] + [("Any", 0)]
+        for text, rating in buttons:
+            prefix = "✅ " if rating == current_minimum_rating else ""
+            builder.button(
+                text=prefix + text, callback_data=MinimumRatingCD(rating=rating)
+            )
+
+        return builder.adjust(5, 1).as_markup()
+
+    async def build_additional_final_text(self) -> fmt.Text:
+        current_minimum_rating = await self.genre_preferences.get_minimum_rating()
+        return fmt.Text(
+            "✅ ", f"{current_minimum_rating}+" if current_minimum_rating else "Any"
+        )
+
+
 def from_active_menu_item(menu_item: type[MenuItem]) -> Callable:
     """Builds a filter that allows only callback queries from the given menu item."""
 
@@ -388,16 +442,22 @@ class SettingsMenu:
         self.genre_combinator = GenreCombinatorMenuItem(
             bot, chat, state, genre_preferences
         )
+        self.minimum_rating = MinimumRatingMenuItem(bot, chat, state, genre_preferences)
+
+        self._all = [
+            self.title,
+            self.genre_selector,
+            self.genre_combinator,
+            self.minimum_rating,
+        ]
 
     async def send(self) -> None:
-        await self.title.send()
-        await self.genre_selector.send()
-        await self.genre_combinator.send()
+        for item in self._all:
+            await item.send()
 
     async def close(self) -> None:
-        await self.title.close()
-        await self.genre_selector.close()
-        await self.genre_combinator.close()
+        for item in self._all:
+            await item.close()
 
 
 def inject_common_objects(
@@ -432,11 +492,12 @@ def inject_common_objects(
 class FilterSettingsScene(Scene, state="filter_settings"):
     """At this scene, a user can adjust their filter settings.
 
-    The scene consists of three messages:
+    The scene consists of four messages:
 
     1. Title
     2. Genre selection preferences
     3. Genre combinator mode preferences
+    4. Minimum rating preferences
 
     These messages are sent when a user enters the scene and called the **active menu**.
     IDs of the messages are saved for the entire duration of the scene,
@@ -593,6 +654,40 @@ class FilterSettingsScene(Scene, state="filter_settings"):
         await session.commit()
 
         await menu.genre_combinator.update()
+
+        current_user.record_settings_update()
+        await session.commit()
+
+    @on.callback_query(
+        MinimumRatingCD.filter(),
+        from_active_menu_item(MinimumRatingMenuItem),
+        inject_common_objects,
+    )
+    async def on_set_min_rating(
+        self,
+        callback_query: aiogram.types.CallbackQuery,
+        callback_data: MinimumRatingCD,
+        session: async_sa.AsyncSession,
+        current_user: models.User,
+        genre_preferences: GenrePreferences,
+        menu: SettingsMenu,
+    ) -> None:
+        """This method is called when a user clicks a button to change
+        the minimum rating.
+
+        :param callback_query: A callback query that was sent after the click.
+        :param callback_data: Parsed callback data.
+        :param session: A database session for this event.
+        :param current_user: The user that clicked the button.
+        :param genre_preferences: GenrePreferences object.
+        :param menu: An object to manage the displayed menu.
+        """
+
+        await genre_preferences.set_minimum_rating(callback_data.rating)
+        await session.commit()
+
+        await menu.minimum_rating.update()
+        logger.info(f"Set minimum rating to {callback_data.rating}")
 
         current_user.record_settings_update()
         await session.commit()

@@ -66,3 +66,9 @@ class GenrePreferences:
 
     async def check_all_selected_genres_are_required(self) -> bool:
         return self.user.require_all_selected_genres
+
+    async def get_minimum_rating(self) -> int:
+        return self.user.minimum_rating
+
+    async def set_minimum_rating(self, rating: int) -> None:
+        self.user.minimum_rating = rating
