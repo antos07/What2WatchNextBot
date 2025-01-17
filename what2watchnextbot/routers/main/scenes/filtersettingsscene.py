@@ -1,5 +1,6 @@
 """This module provides the filter settings scene."""
 
+import asyncio
 from collections.abc import Awaitable, Callable
 
 import aiogram.exceptions
@@ -456,8 +457,9 @@ class SettingsMenu:
             await item.send()
 
     async def close(self) -> None:
-        for item in self._all:
-            await item.close()
+        async with asyncio.TaskGroup() as tg:
+            for item in self._all:
+                tg.create_task(item.close())
 
 
 def inject_common_objects(
