@@ -72,3 +72,12 @@ class GenrePreferences:
 
     async def set_minimum_rating(self, rating: int) -> None:
         self.user.minimum_rating = rating
+
+    async def select_title_type(self, title_type: models.TitleTypes) -> None:
+        await self.user.select_title_type(title_type)
+
+    async def unselect_title_type(self, title_type: models.TitleTypes) -> None:
+        await self.user.unselect_title_type(title_type)
+
+    async def list_selected_title_types(self) -> Sequence[models.TitleTypes]:
+        return await self.user.list_selected_title_types()

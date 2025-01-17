@@ -255,6 +255,74 @@ class TitleMenuItem(MenuItem):
         pass
 
 
+class SelectTitleTypeCD(cd.CallbackData, prefix="select_title_type"):
+    """A callback data for selecting or unselecting a title type in title type
+    selection preferences.
+
+    :ivar title_type: The title type.
+    :ivar selected: The genre's new state.
+    """
+
+    title_type: models.TitleTypes
+    selected: bool
+
+
+class TitleTypeSelectorMenuItem(MenuItem):
+    """A menu item that contains the title type selection preferences.
+
+    :cvar fsm_key: It is a key by which the menu state is stored
+        in the FSM context data.
+    :cvar text: It is a static text of the menu item.
+
+    :ivar bot: A bot that manages the menu item.
+    :ivar chat: A chat, where the menu item is displayed.
+    :ivar state: The FSM context.
+    :ivar genre_preferences: A genre preferences manager.
+
+    :param bot: A bot that manages the menu item.
+    :param chat: A chat, where the menu item is displayed.
+    :param state: The FSM context.
+    :param genre_preferences: A genre preferences manager.
+    """
+
+    fsm_key = "title_type_selector"
+    text = fmt.as_section(
+        fmt.Underline("Types"),
+        "Select title types that you are interested in.",
+    )
+
+    title_type_to_name = {
+        models.TitleTypes.MOVIE: "Movie",
+        models.TitleTypes.SERIES: "Series",
+        models.TitleTypes.MINI_SERIES: "Mini Series",
+    }
+
+    async def build_additional_final_text(self) -> fmt.Text:
+        selected_title_types = await self.genre_preferences.list_selected_title_types()
+        selected_title_types = [
+            self.title_type_to_name[title_type] for title_type in selected_title_types
+        ]
+        if selected_title_types:
+            return fmt.as_marked_list(*selected_title_types, marker="✅ ")
+        return fmt.Text()
+
+    async def build_keyboard(self) -> kb.InlineKeyboardMarkup:
+        selected_title_types = await self.genre_preferences.list_selected_title_types()
+
+        builder = kb.InlineKeyboardBuilder()
+        for title_type, name in self.title_type_to_name.items():
+            selected = title_type in selected_title_types
+            prefix = "✅ " if selected else ""
+            builder.button(
+                text=prefix + name,
+                callback_data=SelectTitleTypeCD(
+                    title_type=title_type, selected=not selected
+                ),
+            )
+
+        return builder.as_markup()
+
+
 class GenreSelectorMenuItem(MenuItem):
     """A menu item that provides genre selection preferences.
 
@@ -280,10 +348,10 @@ class GenreSelectorMenuItem(MenuItem):
     )
 
     async def build_additional_final_text(self) -> fmt.Text:
-        genres = (
+        genres = [
             genre.name for genre in await self.genre_preferences.list_selected_genres()
-        )
-        return fmt.as_marked_list(*genres, marker="✅ ")
+        ]
+        return fmt.as_marked_list(*genres, marker="✅ ") if genres else fmt.Text()
 
     async def build_keyboard(self) -> kb.InlineKeyboardMarkup:
         all_genres = await self.genre_preferences.get_all_genres()
@@ -439,6 +507,9 @@ class SettingsMenu:
         genre_preferences: GenrePreferences,
     ) -> None:
         self.title = TitleMenuItem(bot, chat, state, genre_preferences)
+        self.title_type_selector = TitleTypeSelectorMenuItem(
+            bot, chat, state, genre_preferences
+        )
         self.genre_selector = GenreSelectorMenuItem(bot, chat, state, genre_preferences)
         self.genre_combinator = GenreCombinatorMenuItem(
             bot, chat, state, genre_preferences
@@ -447,6 +518,7 @@ class SettingsMenu:
 
         self._all = [
             self.title,
+            self.title_type_selector,
             self.genre_selector,
             self.genre_combinator,
             self.minimum_rating,
@@ -690,6 +762,46 @@ class FilterSettingsScene(Scene, state="filter_settings"):
 
         await menu.minimum_rating.update()
         logger.info(f"Set minimum rating to {callback_data.rating}")
+
+        current_user.record_settings_update()
+        await session.commit()
+
+    @on.callback_query(
+        SelectTitleTypeCD.filter(),
+        from_active_menu_item(TitleTypeSelectorMenuItem),
+        inject_common_objects,
+    )
+    async def on_selected_title_type(
+        self,
+        callback_query: aiogram.types.CallbackQuery,
+        callback_data: SelectTitleTypeCD,
+        session: async_sa.AsyncSession,
+        current_user: models.User,
+        genre_preferences: GenrePreferences,
+        menu: SettingsMenu,
+    ) -> None:
+        """This method is called when a user clicks a button with genre
+        in genre selection preferences.
+
+        :param callback_query: A callback query that was sent after the click.
+        :param callback_data: Parsed callback data.
+        :param session: A database session for this event.
+        :param current_user: The user that clicked the button.
+        :param genre_preferences: GenrePreferences object.
+        :param menu: An object to manage the displayed menu.
+        """
+
+        # callback_data.selected contains a new state of the genre.
+        if callback_data.selected:
+            await genre_preferences.select_title_type(callback_data.title_type)
+            logger.info(f"Selected title_type={callback_data.title_type}")
+        else:
+            await genre_preferences.unselect_title_type(callback_data.title_type)
+            logger.info(f"Unselected title_type={callback_data.title_type}")
+
+        await session.commit()
+
+        await menu.title_type_selector.update()
 
         current_user.record_settings_update()
         await session.commit()

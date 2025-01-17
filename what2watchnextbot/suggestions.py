@@ -61,8 +61,15 @@ def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
         .exists(),
     )
 
-    # Leaving only movies
-    stmt = stmt.where(models.Title.type == models.TitleTypes.MOVIE)
+    # Leaving only selected title types
+    stmt = stmt.where(
+        sa.select("*")
+        .where(
+            models.selected_title_types_table.c.type == models.Title.type,
+            models.selected_title_types_table.c.user_id == user.id,
+        )
+        .exists(),
+    )
 
     # Leaving title with selected minimum rating and minimum number of votes
     stmt = stmt.where(

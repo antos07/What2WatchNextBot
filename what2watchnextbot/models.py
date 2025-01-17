@@ -1,6 +1,7 @@
 import datetime
 import enum
 import typing
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as sa_async
@@ -60,7 +61,7 @@ class Base(orm.DeclarativeBase, sa_async.AsyncAttrs):
         return f"<{self.__class__.__name__} {id(self)}>"
 
 
-class TitleTypes(enum.Enum):
+class TitleTypes(enum.IntEnum):
     MOVIE = enum.auto()
     SERIES = enum.auto()
     MINI_SERIES = enum.auto()
@@ -188,6 +189,20 @@ ignored_titles_table = sa.Table(
 )
 
 
+selected_title_types_table = sa.Table(
+    "selected_title_types",
+    Base.metadata,
+    sa.Column(
+        "user_id",
+        sa.Integer,
+        sa.ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+    sa.Column("type", sa.Enum(TitleTypes), primary_key=True),
+)
+
+
 class User(Base):
     id: orm.Mapped[int] = orm.mapped_column(sa.BigInteger, primary_key=True)
     last_settings_update_at: orm.Mapped[datetime.datetime | None]
@@ -213,3 +228,53 @@ class User(Base):
 
     def record_settings_update(self) -> None:
         self.last_settings_update_at = datetime.datetime.now()
+
+    async def list_selected_title_types(self) -> Sequence[TitleTypes]:
+        session = sa_async.async_object_session(self)
+        if not session:
+            message = (
+                f"{self.__class__.__name__}.list_selected_title_types() "
+                f"can only be called on an object bound to a session"
+            )
+            raise RuntimeError(message)
+
+        stmt = sa.select(selected_title_types_table.c.type).where(
+            selected_title_types_table.c.user_id == self.id
+        )
+        results = await session.scalars(stmt)
+        return results.all()
+
+    async def select_title_type(self, title_type: TitleTypes) -> None:
+        session = sa_async.async_object_session(self)
+        if not session:
+            message = (
+                f"{self.__class__.__name__}.select_title_type() "
+                f"can only be called on an object bound to a session"
+            )
+            raise RuntimeError(message)
+
+        already_selected_title_types = await self.list_selected_title_types()
+        if title_type in already_selected_title_types:
+            return
+
+        await session.execute(
+            sa.insert(selected_title_types_table).values(
+                user_id=self.id, type=title_type
+            )
+        )
+
+    async def unselect_title_type(self, title_type: TitleTypes) -> None:
+        session = sa_async.async_object_session(self)
+        if not session:
+            message = (
+                f"{self.__class__.__name__}.unselect_title_type() "
+                f"can only be called on an object bound to a session"
+            )
+            raise RuntimeError(message)
+
+        await session.execute(
+            sa.delete(selected_title_types_table).where(
+                selected_title_types_table.c.user_id == self.id,
+                selected_title_types_table.c.type == title_type,
+            )
+        )
