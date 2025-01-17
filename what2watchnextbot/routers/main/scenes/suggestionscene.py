@@ -6,7 +6,9 @@ from aiogram.fsm.scene import Scene, on
 from loguru import logger
 
 from what2watchnextbot import models, suggestions
-from what2watchnextbot.routers.main.scenes.titlefiltersscene import TitleFilterScene
+from what2watchnextbot.routers.main.scenes.filtersettingsscene import (
+    FilterSettingsScene,
+)
 
 
 class SuggestionScene(Scene, state="suggestions"):
@@ -28,8 +30,8 @@ class SuggestionScene(Scene, state="suggestions"):
         logger.debug("Handling new suggestion request")
 
         if current_user.last_settings_update_at is None:
-            logger.debug(f"Entering for the 1st time - going to {TitleFilterScene}")
-            await self.wizard.goto(TitleFilterScene)
+            logger.debug(f"Entering for the 1st time - going to {FilterSettingsScene}")
+            await self.wizard.goto(FilterSettingsScene)
         else:
             logger.debug("Reentering - displaying suggestion")
             await self._answer_with_suggestion(
@@ -105,7 +107,7 @@ class SuggestionScene(Scene, state="suggestions"):
     @on.message(aiogram.F.text == SETTINGS_BUTTON)
     async def on_open_settings(self, message: aiogram.types.Message) -> None:
         logger.debug("Opening settings")
-        await self.wizard.goto(TitleFilterScene)
+        await self.wizard.goto(FilterSettingsScene)
 
     async def _answer_with_suggestion(
         self,
