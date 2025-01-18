@@ -25,40 +25,30 @@ def read_dataframe(
     title_basics_dataset: str | os.PathLike[str],
     title_ratings_dataset: str | os.PathLike[str],
 ) -> pd.DataFrame:
-    title_basics_df = pd.read_csv(title_basics_dataset, sep="\t")
-    title_ratings_df = pd.read_csv(title_ratings_dataset, sep="\t")
+    title_basics_df = pd.read_csv(title_basics_dataset, sep="\t", na_values=NO_VALUE)
+    title_ratings_df = pd.read_csv(title_ratings_dataset, sep="\t", na_values=NO_VALUE)
+
     return pd.merge(title_basics_df, title_ratings_df, how="inner", on="tconst")
 
 
 def preprocess_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.dropna()
-
     # Dropping unused columns
-    df.drop(columns=["originalTitle", "runtimeMinutes", "isAdult"], inplace=True)
+    df = df.drop(columns=["originalTitle", "runtimeMinutes", "isAdult"])
 
     # Leaving only supported types of titles, converting them to models.TitleTypes
     df = df[df["titleType"].isin(TITLE_TYPES_MAPPING)]
     df["titleType"] = df["titleType"].map(TITLE_TYPES_MAPPING)
 
     # Dropping rows with missing essential values
-    df = df[
-        (df["startYear"] != NO_VALUE)
-        & (df["genres"] != NO_VALUE)
-        & (df["primaryTitle"] != NO_VALUE)
-    ]
+    df = df[df["startYear"].notna() & df["genres"].notna() & df["primaryTitle"].notna()]
 
     # Extracting actual ids from tconst column that has the format "tt\d{8}"
     df["id"] = df["tconst"].apply(lambda imdb_id: int(imdb_id.lstrip("t")))
-    df.drop(columns=["tconst"], inplace=True)
-    df.set_index("id", inplace=True, drop=False)
+    df = df.drop(columns=["tconst"])
+    df = df.set_index("id", drop=False)
 
     # startYear column actually contains numbers, so casting it to int
     df["startYear"] = df["startYear"].astype(int)
-
-    # endYear column should contain either ints or None, so converting \N to None
-    df["endYear"] = df["endYear"].apply(
-        lambda year: int(year) if year != NO_VALUE else None
-    )
 
     # genres column is a coma-separated list of genres, so splitting converting it
     # to an actual list
