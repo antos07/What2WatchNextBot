@@ -2,7 +2,7 @@ import aiogram
 from aiogram.fsm.storage.redis import DefaultKeyBuilder, RedisStorage
 
 from what2watchnextbot import database
-from what2watchnextbot.routers import error, main, shutdown
+from what2watchnextbot.routers import error, main, shutdown, startup
 from what2watchnextbot.settings import get_settings
 
 
@@ -23,6 +23,7 @@ def create_dispatcher() -> aiogram.Dispatcher:
 
     dispatcher.include_routers(
         main.router,
+        startup.router,
         shutdown.router,
         error.router,
     )
