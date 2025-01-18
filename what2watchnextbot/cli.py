@@ -1,12 +1,14 @@
 import tempfile  # noqa: I001
 
 import aiogram
+import aiogram.webhook.aiohttp_server as aiogram_webhook
 import alembic.command
 import alembic.config
 import click
 import dotenv
 import pydantic
 import sqlalchemy as sa
+from aiohttp import web
 from loguru import logger
 
 from what2watchnextbot import database, dataimport, logging, models
@@ -102,13 +104,67 @@ def run():
 
 
 @run.command()
+@click.option("--delete-webhook", is_flag=True, help="Delete webhook.")
 @click.pass_context
-def polling(ctx):
+def polling(ctx, delete_webhook):
     """Run the bot in the polling mode"""
 
     bot = aiogram.Bot(ctx.obj["settings"].BOT_TOKEN)
     dispatcher = create_dispatcher()
+
+    if delete_webhook:
+
+        @dispatcher.startup()
+        async def delete_webhook():
+            await bot.delete_webhook()
+            logger.info("Webhook deleted.")
+
     dispatcher.run_polling(bot)
+
+
+@run.command()
+@click.option("--host", default="0.0.0.0", help="Host to listen on.", show_default=True)
+@click.option(
+    "--port", default=8080, type=int, help="Port to listen on.", show_default=True
+)
+@click.option(
+    "--path", default="/tg-bot/webhook/", help="Webhook route path", show_default=True
+)
+@click.option("--url", help="Webhook URL that will be passed to Telegram.")
+@click.option(
+    "--cert",
+    type=click.Path(exists=True),
+    help="Path to an SSL certificate file.",
+    required=False,
+    show_default=True,
+)
+@click.pass_context
+def webhook(ctx, host, port, path, url, cert):
+    """Run the bot in the webhook mode.
+
+    More info on Telegram webhooks: https://core.telegram.org/bots/webhooks
+
+    If you are running a webhook with a self-signed certificate, you should pass
+    a certificate (use --cert FILENAME) that will be sent to Telegram in
+    a set_webhook request.
+    """
+
+    bot = aiogram.Bot(ctx.obj["settings"].BOT_TOKEN)
+    dispatcher = create_dispatcher()
+
+    @dispatcher.startup()
+    async def set_webhook():
+        certificate = aiogram.types.FSInputFile(cert) if cert else None
+        await bot.set_webhook(url=url, certificate=certificate)
+        logger.info(f"Webhook set: {url}.")
+
+    app = web.Application()
+    aiogram_webhook.SimpleRequestHandler(dispatcher=dispatcher, bot=bot).register(
+        app, path=path
+    )
+    aiogram_webhook.setup_application(app, dispatcher, bot=bot)
+
+    web.run_app(app, host=host, port=port, print=logger.info)
 
 
 @cli.group()
