@@ -1,3 +1,4 @@
+import datetime
 import typing
 from collections.abc import Awaitable, Callable
 
@@ -78,7 +79,9 @@ async def save_current_user(handler, update, data):
     if not current_user:
         current_user = models.User(id=current_user_id)
         session.add(current_user)
-        await session.commit()
+
+    current_user.last_activity_at = datetime.datetime.now()
+    await session.commit()
 
     data["current_user"] = current_user
     await handler(update, data)

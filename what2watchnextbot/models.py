@@ -220,6 +220,9 @@ class User(Base):
     )
     minimum_rating: orm.Mapped[int] = orm.mapped_column(default=6)
     minimum_votes: orm.Mapped[int] = orm.mapped_column(default=10000)
+    last_activity_at: orm.Mapped[datetime.datetime] = orm.mapped_column(
+        default=datetime.datetime.now
+    )
 
     def __repr__(self) -> str:
         return self._repr(
