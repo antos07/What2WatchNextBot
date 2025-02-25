@@ -14,14 +14,14 @@ files = [
 
 [[package]]
 name = "aiogram"
-version = "3.17.0"
+version = "3.18.0"
 description = "Modern and fully asynchronous framework for Telegram Bot API"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "aiogram-3.17.0-py3-none-any.whl", hash = "sha256:251738331107ce2a679a901354b1409b7544d9f030d8092dcc68f2bb3bb0c467"},
-    {file = "aiogram-3.17.0.tar.gz", hash = "sha256:01bffbf43d6fb4a31e3c668a601bc7e71c2cf3919bd831ba6c179ef86034c2f4"},
+    {file = "aiogram-3.18.0-py3-none-any.whl", hash = "sha256:ea2a2fbd11e4fffbba14a2081eb6322482ae569c6348618de5f7b6b41b52384d"},
+    {file = "aiogram-3.18.0.tar.gz", hash = "sha256:429883a419751bfebeeafdc74804807d0abd5c9879ab0f06c045130de4752605"},
 ]
 
 [package.dependencies]
@@ -30,7 +30,7 @@ aiohttp = ">=3.9.0,<3.12"
 certifi = ">=2023.7.22"
 magic-filter = ">=1.0.12,<1.1"
 pydantic = ">=2.4.1,<2.11"
-redis = {version = ">=5.0.1,<5.1.0", extras = ["hiredis"], optional = true, markers = "extra == \"redis\""}
+redis = {version = ">=5.0.1,<5.3.0", extras = ["hiredis"], optional = true, markers = "extra == \"redis\""}
 typing-extensions = ">=4.7.0,<=5.0"
 
 [package.extras]
@@ -41,7 +41,7 @@ fast = ["aiodns (>=3.0.0)", "uvloop (>=0.17.0)", "uvloop (>=0.21.0)"]
 i18n = ["babel (>=2.13.0,<2.14.0)"]
 mongo = ["motor (>=3.3.2,<3.7.0)"]
 proxy = ["aiohttp-socks (>=0.8.3,<0.9.0)"]
-redis = ["redis[hiredis] (>=5.0.1,<5.1.0)"]
+redis = ["redis[hiredis] (>=5.0.1,<5.3.0)"]
 test = ["aresponses (>=2.1.6,<2.2.0)", "pycryptodomex (>=3.19.0,<3.20.0)", "pytest (>=7.4.2,<7.5.0)", "pytest-aiohttp (>=1.0.5,<1.1.0)", "pytest-asyncio (>=0.21.1,<0.22.0)", "pytest-cov (>=4.1.0,<4.2.0)", "pytest-html (>=4.0.2,<4.1.0)", "pytest-lazy-fixture (>=0.6.3,<0.7.0)", "pytest-mock (>=3.12.0,<3.13.0)", "pytest-mypy (>=0.10.3,<0.11.0)", "pytz (>=2023.3,<2024.0)"]
 
 [[package]]
@@ -3112,22 +3112,22 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "redis"
-version = "5.0.8"
+version = "5.2.1"
 description = "Python client for Redis database and key-value store"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "redis-5.0.8-py3-none-any.whl", hash = "sha256:56134ee08ea909106090934adc36f65c9bcbbaecea5b21ba704ba6fb561f8eb4"},
-    {file = "redis-5.0.8.tar.gz", hash = "sha256:0c5b10d387568dfe0698c6fad6615750c24170e548ca2deac10c649d463e9870"},
+    {file = "redis-5.2.1-py3-none-any.whl", hash = "sha256:ee7e1056b9aea0f04c6c2ed59452947f34c4940ee025f5dd83e6a6418b6989e4"},
+    {file = "redis-5.2.1.tar.gz", hash = "sha256:16f2e22dff21d5125e8481515e386711a34cbec50f0e44413dd7d9c060a54e0f"},
 ]
 
 [package.dependencies]
-hiredis = {version = ">1.0.0", optional = true, markers = "extra == \"hiredis\""}
+hiredis = {version = ">=3.0.0", optional = true, markers = "extra == \"hiredis\""}
 
 [package.extras]
-hiredis = ["hiredis (>1.0.0)"]
-ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
+hiredis = ["hiredis (>=3.0.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==23.2.1)", "requests (>=2.31.0)"]
 
 [[package]]
 name = "referencing"
@@ -3984,4 +3984,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "c812fb4bd8462f213953c8b2fa1be3feda7cb9575bfd15b1f95d18db6f7be0d3"
+content-hash = "d9855775aa46ca3671110e00fbce140890a9c5b647af2490ab9cbca4a51d2b23"

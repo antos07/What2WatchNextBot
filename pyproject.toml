@@ -11,7 +11,7 @@ dependencies = [
     "sqlalchemy[postgresql-psycopgbinary,asyncio] (>=2.0.0,<2.1.0)",
     "alembic (>=1.14.0,<2.0.0)",
     "pandas (>=2.2.0,<3.0.0)",
-    "aiogram[redis] (>=3.17.0,<3.18.0)",
+    "aiogram[redis] (>=3.17.0,<3.19.0)",
     "loguru (>=0.7.0,<0.8.0)",
     "click (>=8.1.0,<9.0.0)",
     "python-dotenv",
