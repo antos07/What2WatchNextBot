@@ -109,7 +109,12 @@ def run():
 def polling(ctx, delete_webhook):
     """Run the bot in the polling mode"""
 
-    bot = aiogram.Bot(ctx.obj["settings"].BOT_TOKEN)
+    settings = ctx.obj["settings"]
+    bot = aiogram.Bot(settings.BOT_TOKEN)
+
+    if settings.LOG_ERRORS_TO_CHAT_ID:
+        logging.add_telegram_error_sink(bot, settings.LOG_ERRORS_TO_CHAT_ID)
+
     dispatcher = create_dispatcher()
 
     if delete_webhook:
@@ -149,7 +154,12 @@ def webhook(ctx, host, port, path, url, cert):
     a set_webhook request.
     """
 
-    bot = aiogram.Bot(ctx.obj["settings"].BOT_TOKEN)
+    settings = ctx.obj["settings"]
+    bot = aiogram.Bot(settings.BOT_TOKEN)
+
+    if settings.LOG_ERRORS_TO_CHAT_ID:
+        logging.add_telegram_error_sink(bot, settings.LOG_ERRORS_TO_CHAT_ID)
+
     dispatcher = create_dispatcher()
 
     @dispatcher.startup()

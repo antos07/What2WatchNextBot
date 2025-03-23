@@ -5,6 +5,8 @@ import sys
 import time
 import typing
 
+import aiogram
+from aiogram_loguru import AiogramSink
 from loguru import logger
 
 type LogLevel = typing.Literal["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -16,6 +18,11 @@ def configure(level: LogLevel = "INFO"):
 
     logger.remove()
     logger.add(sys.stderr, level=level, format=_format)
+
+
+def add_telegram_error_sink(bot: aiogram.Bot, chat_id: int) -> None:
+    sink = AiogramSink(bot, chat_id)
+    logger.add(sink, level="ERROR", format=_format)
 
 
 def _format(record):

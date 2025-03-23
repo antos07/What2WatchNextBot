@@ -10,6 +10,8 @@ class Settings(pydantic_settings.BaseSettings):
 
     BOT_TOKEN: str
 
+    LOG_ERRORS_TO_CHAT_ID: int | None = None
+
 
 @functools.lru_cache
 def get_settings() -> Settings:
