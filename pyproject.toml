@@ -2,11 +2,9 @@
 name = "what2watchnextbot"
 version = "0.1.0"
 description = ""
-authors = [
-    { name = "Anton Trotsenko", email = "trotsenko.ant07@gmail.com" }
-]
-readme = "README.md"
+authors = [{ name = "Anton Trotsenko", email = "trotsenko.ant07@gmail.com" }]
 requires-python = ">=3.13,<4.0"
+readme = "README.md"
 dependencies = [
     "sqlalchemy[postgresql-psycopgbinary,asyncio] (>=2.0.0,<2.1.0)",
     "alembic (>=1.14.0,<2.0.0)",
@@ -23,13 +21,17 @@ dependencies = [
 [project.scripts]
 what2watchnextbot = "what2watchnextbot.cli:cli"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.9.2"
-pre-commit = "^4.0.1"
-watchfiles = "^1.0.3"
+[dependency-groups]
+dev = [
+    "ruff>=0.9.2,<0.10",
+    "pre-commit>=4.0.1,<5",
+    "watchfiles>=1.0.3,<2",
+]
+research = ["jupyter"]
 
-[tool.poetry.group.research.dependencies]
-jupyter = "*"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff.lint]
 select = [
@@ -46,7 +48,3 @@ select = [
     # isort
     "I",
 ]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
