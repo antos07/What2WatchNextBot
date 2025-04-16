@@ -29,6 +29,7 @@ asyncio_default_fixture_loop_scope = "function"
 required_plugins = [
     "pytest-asyncio",
 ]
+pythonpath = "."
 
 [tool.ruff.lint]
 select = [
