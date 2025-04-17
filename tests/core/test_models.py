@@ -3,8 +3,7 @@ import datetime
 import freezegun
 
 from app.core.models import User
-
-RANDOM_DATETIME = datetime.datetime(2025, 1, 17, 17, 17, 17)
+from app.testing.constants import RANDOM_DATETIME
 
 
 class TestUser:

@@ -1,3 +1,4 @@
+from copy import copy
 from unittest import mock
 
 import pytest
@@ -5,9 +6,15 @@ from aiogram.fsm.storage.redis import RedisEventIsolation, RedisStorage
 from redis.asyncio import Redis
 
 from app.bot import dispatcher
+from app.bot.routers import test
 
 
 class TestCreateDispatcher:
+    @pytest.fixture(autouse=True)
+    def patch_routers(self, monkeypatch: pytest.MonkeyPatch):
+        # to avoid readding the same router multiple times
+        monkeypatch.setattr(test, "router", copy(test.router))
+
     @pytest.fixture
     def default_config(self) -> dispatcher.Config:
         return dispatcher.Config()
@@ -35,13 +42,20 @@ class TestCreateDispatcher:
     def test_fsm_storage_key_builder_includes_bot_id(
         self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
     ) -> None:
-        dp = dispatcher.create_dispatcher(config=default_config, redis=mock.MagicMock())
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
 
         assert dp.storage.key_builder.with_bot_id
 
     def test_redis_events_isolation_key_builder_includes_bot_id(
         self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
     ) -> None:
-        dp = dispatcher.create_dispatcher(config=default_config, redis=mock.MagicMock())
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
 
         assert dp.fsm.events_isolation.key_builder.with_bot_id
+
+    def test_top_level_routers_included(
+        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
+    ) -> None:
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
+
+        assert dp.sub_routers == [test.router]

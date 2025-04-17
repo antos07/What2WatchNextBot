@@ -1,8 +1,7 @@
 from aiogram.enums import ParseMode
 
 from app.bot.bot import Config, create_bot
-
-BOT_TOKEN = "12345:AAAAAAAAAAAAA"
+from app.testing.constants import BOT_TOKEN
 
 
 class TestCreateBot:

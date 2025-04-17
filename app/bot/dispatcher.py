@@ -8,6 +8,8 @@ from aiogram.fsm.storage.redis import (
 from aiogram.fsm.strategy import FSMStrategy
 from redis.asyncio import Redis
 
+from app.bot.routers import test
+
 
 class Config(pydantic_settings.BaseSettings, env_prefix="DP_"):
     fsm_strategy: FSMStrategy = FSMStrategy.USER_IN_CHAT
@@ -23,8 +25,15 @@ def create_dispatcher(config: Config, redis: Redis) -> aiogram.Dispatcher:
     # from the user is being handled
     event_isolation = RedisEventIsolation(redis=redis, key_builder=key_builder)
 
-    return aiogram.Dispatcher(
+    dispatcher = aiogram.Dispatcher(
         storage=storage,
         fsm_strategy=config.fsm_strategy,
         events_isolation=event_isolation,
     )
+
+    # Setup routers
+    dispatcher.include_routers(
+        test.router,
+    )
+
+    return dispatcher
