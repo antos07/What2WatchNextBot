@@ -59,3 +59,21 @@ class TestCreateDispatcher:
         dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
 
         assert dp.sub_routers == [test.router]
+
+    def test_redis_is_injected(
+        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
+    ) -> None:
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
+
+        assert dp["redis"] is redis_mock
+
+    def test_custom_dependencies_are_injected(
+        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
+    ) -> None:
+        dependency = mock.sentinel.dependency
+
+        dp = dispatcher.create_dispatcher(
+            config=default_config, redis=redis_mock, dependency=dependency
+        )
+
+        assert dp["dependency"] is dependency
