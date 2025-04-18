@@ -15,7 +15,15 @@ class Config(pydantic_settings.BaseSettings, env_prefix="DP_"):
     fsm_strategy: FSMStrategy = FSMStrategy.USER_IN_CHAT
 
 
-def create_dispatcher(config: Config, redis: Redis) -> aiogram.Dispatcher:
+def create_dispatcher(config: Config, redis: Redis, **kwargs) -> aiogram.Dispatcher:
+    """Create a new dispatcher instance from the given configuration.
+
+    :param config: Dispatcher configuration.
+    :param redis: Redis client used by the FSM.
+    :param kwargs: Additional dependencies to inject into the dispatcher.
+    :return: A new dispatcher instance.
+    """
+
     # Use bot id in key builder to avoid collisions with other bots.
     key_builder = DefaultKeyBuilder(with_bot_id=True)
 
@@ -35,5 +43,10 @@ def create_dispatcher(config: Config, redis: Redis) -> aiogram.Dispatcher:
     dispatcher.include_routers(
         test.router,
     )
+
+    # Inject dependencies
+    dispatcher["redis"] = redis
+    for key, value in kwargs.items():
+        dispatcher[key] = value
 
     return dispatcher
