@@ -8,6 +8,7 @@ from aiogram.fsm.storage.redis import (
 from aiogram.fsm.strategy import FSMStrategy
 from redis.asyncio import Redis
 
+from app.bot import middlewares
 from app.bot.routers import test
 
 
@@ -38,6 +39,9 @@ def create_dispatcher(config: Config, redis: Redis, **kwargs) -> aiogram.Dispatc
         fsm_strategy=config.fsm_strategy,
         events_isolation=event_isolation,
     )
+
+    # Setup middlewares
+    dispatcher.update.outer_middleware.register(middlewares.session_provider_middleware)
 
     # Setup routers
     dispatcher.include_routers(

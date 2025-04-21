@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 
 import pydantic
 import pytest
@@ -30,17 +30,18 @@ def db_config():
 
 
 @pytest.fixture()
-async def sa_async_session(
+async def initialized_db(
     db_config: app.database.Config,
-) -> AsyncGenerator[sa_async.AsyncSession]:
+) -> AsyncGenerator[
+    tuple[sa_async.AsyncEngine, Callable[[], sa_async.AsyncSession]], None
+]:
     engine, session_factory = app.database.init_async(db_config)
 
     try:
         async with engine.begin() as conn:
             await conn.run_sync(models.Base.metadata.create_all)
 
-        async with session_factory() as session:
-            yield session
+        yield engine, session_factory
 
     finally:
         try:
@@ -48,3 +49,14 @@ async def sa_async_session(
                 await conn.run_sync(models.Base.metadata.drop_all)
         finally:
             await engine.dispose()
+
+
+@pytest.fixture()
+async def sa_async_session(
+    db_config: app.database.Config,
+    initialized_db: tuple[sa_async.AsyncEngine, Callable[[], sa_async.AsyncSession]],
+) -> AsyncGenerator[sa_async.AsyncSession]:
+    _, session_factory = initialized_db
+
+    async with session_factory() as session:
+        yield session

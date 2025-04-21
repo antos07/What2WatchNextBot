@@ -5,7 +5,7 @@ import pytest
 from aiogram.fsm.storage.redis import RedisEventIsolation, RedisStorage
 from redis.asyncio import Redis
 
-from app.bot import dispatcher
+from app.bot import dispatcher, middlewares
 from app.bot.routers import test
 
 
@@ -77,3 +77,12 @@ class TestCreateDispatcher:
         )
 
         assert dp["dependency"] is dependency
+
+    def test_custom_dispatcher_level_middlewares_are_added(
+        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
+    ) -> None:
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
+
+        assert set(dp.update.outer_middleware) >= {
+            middlewares.session_provider_middleware
+        }
