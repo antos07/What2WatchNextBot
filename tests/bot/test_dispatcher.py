@@ -1,3 +1,4 @@
+from contextlib import suppress
 from copy import copy
 from unittest import mock
 
@@ -84,5 +85,19 @@ class TestCreateDispatcher:
         dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
 
         assert set(dp.update.outer_middleware) >= {
-            middlewares.session_provider_middleware
+            middlewares.session_provider_middleware,
+            middlewares.updated_user_provider_middleware,
         }
+
+    def test_updated_user_provider_middleware_is_after_updated_user_provider_middleware(
+        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
+    ) -> None:
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
+
+        # no reason to fail if middleware is not found - this is covered by other tests
+        with suppress(IndexError):
+            assert dp.update.outer_middleware.index(
+                middlewares.session_provider_middleware
+            ) < dp.update.outer_middleware.index(
+                middlewares.updated_user_provider_middleware
+            )

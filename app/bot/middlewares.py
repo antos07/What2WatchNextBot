@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 
 from aiogram.dispatcher.middlewares.data import MiddlewareData
 
+from app.core import models
+from app.core.services import user as user_service
+
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
@@ -26,6 +29,7 @@ class ExtendedMiddlewareData(MiddlewareData, total=False):
     redis: Redis
     config: Config
     session: sa_async.AsyncSession
+    user: models.User
 
 
 async def session_provider_middleware[T](
@@ -44,3 +48,26 @@ async def session_provider_middleware[T](
     session = data["session"] = data["session_factory"]()
     async with session:
         return await handler(event, data)
+
+
+async def updated_user_provider_middleware[T](
+    handler: Handler[T],
+    event: aiogram.types.TelegramObject,
+    data: ExtendedMiddlewareData,
+) -> T:
+    """Provide an updated user object to the handler.
+
+    :param handler: The handler to wrap.
+    :param event: The event object.
+    :param data: The middleware data.
+    :return: The result of the handler.
+    """
+
+    session = data["session"]
+    event_from_user = data["event_from_user"]
+
+    data["user"] = await user_service.create_or_update_from_data(
+        session=session, user_data=event_from_user
+    )
+
+    return await handler(event, data)
