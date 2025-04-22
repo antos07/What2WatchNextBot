@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator, Callable
 import pydantic
 import pytest
 import sqlalchemy.ext.asyncio as sa_async
+from loguru import logger
 
 import app.database
 from app.core import models
@@ -19,6 +20,11 @@ def load_env_file(request: pytest.FixtureRequest):
         from dotenv import load_dotenv
 
         load_dotenv(env_file)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_logs_by_default() -> None:
+    logger.remove()
 
 
 @pytest.fixture(scope="session")

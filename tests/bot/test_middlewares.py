@@ -1,14 +1,18 @@
+import datetime
 from collections.abc import Callable
 from contextlib import suppress
 from unittest import mock
 
 import aiogram.types
 import pytest
+from aiogram.dispatcher.middlewares.user_context import EventContext
+from logot import Logot, logged
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.bot import middlewares
 from app.bot.middlewares import ExtendedMiddlewareData
 from app.core import models
+from app.logging import logger
 
 EVENT = mock.sentinel.event
 HANDLER_RETURN_VALUE = mock.sentinel.handler_return_value
@@ -111,6 +115,76 @@ class TestUpdatedUserProviderMiddleware:
         self, middleware_data: ExtendedMiddlewareData
     ):
         result = await middlewares.updated_user_provider_middleware(
+            empty_handler, EVENT, middleware_data
+        )
+
+        assert result == HANDLER_RETURN_VALUE
+
+
+class TestLoggingMiddleware:
+    @pytest.fixture
+    def middleware_data(self) -> ExtendedMiddlewareData:
+        user = aiogram.types.User(id=1, is_bot=False, first_name="John")
+        chat = aiogram.types.Chat(
+            id=2, type=aiogram.enums.ChatType.PRIVATE, title="John"
+        )
+        message = aiogram.types.Message(
+            message_id=3,
+            date=datetime.datetime.now(),
+            chat=chat,
+            from_user=user,
+            text="Test",
+        )
+        update = aiogram.types.Update(update_id=4, message=message)
+
+        return {
+            "event_update": update,
+            "event_context": EventContext(chat, user),
+        }
+
+    async def test_logging_is_contextualized(
+        self, middleware_data: ExtendedMiddlewareData, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mocked_contextualize = mock.MagicMock(spec=logger.contextualize)
+        monkeypatch.setattr(logger, "contextualize", mocked_contextualize)
+
+        await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
+
+        mocked_contextualize.assert_called_once_with(
+            update_id=middleware_data["event_update"].update_id,
+            user_id=middleware_data["event_context"].user_id,
+            chat_id=middleware_data["event_context"].chat_id,
+        )
+
+    async def test_update_is_logged(
+        self, middleware_data: ExtendedMiddlewareData, logot: Logot
+    ) -> None:
+        await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
+
+        logot.assert_logged(
+            logged.debug(f"Processing update: {middleware_data['event_update']!r}")
+        )
+
+    async def test_event_is_logged(
+        self, middleware_data: ExtendedMiddlewareData, logot: Logot
+    ) -> None:
+        await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
+
+        logot.assert_logged(logged.debug(f"Event: {EVENT!r}"))
+
+    async def test_event_context_is_logged(
+        self, middleware_data: ExtendedMiddlewareData, logot: Logot
+    ) -> None:
+        await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
+
+        logot.assert_logged(
+            logged.debug(f"Event context: {middleware_data['event_context']!r}")
+        )
+
+    async def test_returns_handler_result(
+        self, middleware_data: ExtendedMiddlewareData
+    ):
+        result = await middlewares.logging_middleware(
             empty_handler, EVENT, middleware_data
         )
 

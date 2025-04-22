@@ -85,6 +85,7 @@ class TestCreateDispatcher:
         dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
 
         assert set(dp.update.outer_middleware) >= {
+            middlewares.logging_middleware,
             middlewares.session_provider_middleware,
             middlewares.updated_user_provider_middleware,
         }

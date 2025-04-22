@@ -41,6 +41,7 @@ def create_dispatcher(config: Config, redis: Redis, **kwargs) -> aiogram.Dispatc
     )
 
     # Setup middlewares
+    dispatcher.update.outer_middleware.register(middlewares.logging_middleware)
     dispatcher.update.outer_middleware.register(middlewares.session_provider_middleware)
     dispatcher.update.outer_middleware.register(middlewares.updated_user_provider_middleware)
 
