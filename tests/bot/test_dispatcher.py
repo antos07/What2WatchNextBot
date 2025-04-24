@@ -7,7 +7,7 @@ from aiogram.fsm.storage.redis import RedisEventIsolation, RedisStorage
 from redis.asyncio import Redis
 
 from app.bot import dispatcher, middlewares
-from app.bot.routers import test
+from app.bot.routers import extra, test
 
 
 class TestCreateDispatcher:
@@ -15,6 +15,7 @@ class TestCreateDispatcher:
     def patch_routers(self, monkeypatch: pytest.MonkeyPatch):
         # to avoid readding the same router multiple times
         monkeypatch.setattr(test, "router", copy(test.router))
+        monkeypatch.setattr(extra, "router", copy(test.router))
 
     @pytest.fixture
     def default_config(self) -> dispatcher.Config:
@@ -53,13 +54,6 @@ class TestCreateDispatcher:
         dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
 
         assert dp.fsm.events_isolation.key_builder.with_bot_id
-
-    def test_top_level_routers_included(
-        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
-    ) -> None:
-        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
-
-        assert dp.sub_routers == [test.router]
 
     def test_redis_is_injected(
         self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
@@ -102,3 +96,10 @@ class TestCreateDispatcher:
             ) < dp.update.outer_middleware.index(
                 middlewares.updated_user_provider_middleware
             )
+
+    def test_extra_router_is_always_the_last_one(
+        self, default_config: dispatcher.Config, redis_mock: mock.MagicMock
+    ) -> None:
+        dp = dispatcher.create_dispatcher(config=default_config, redis=redis_mock)
+
+        assert dp.sub_routers[-1] == extra.router
