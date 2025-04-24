@@ -46,10 +46,10 @@ async def logging_middleware[T](
     :return: The result of the handler.
     """
 
-    event_update = data["event_update"]
-    context: dict[str, Any] = {
-        "update_id": event_update.update_id,
-    }
+    context: dict[str, Any] = {}
+
+    if event_update := data.get("event_update"):
+        context["update_id"] = event_update.update_id
 
     event_context = data["event_context"]
     if event_context.user_id:
@@ -58,7 +58,8 @@ async def logging_middleware[T](
         context["chat_id"] = event_context.chat_id
 
     with logger.contextualize(**context):
-        logger.debug("Processing update: {!r}", event_update)
+        if event_update:
+            logger.debug("Processing update: {!r}", event_update)
         logger.debug("Event: {!r}", event)
         logger.debug("Event context: {!r}", event_context)
         return await handler(event, data)

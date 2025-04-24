@@ -183,9 +183,19 @@ class TestLoggingMiddleware:
 
     async def test_returns_handler_result(
         self, middleware_data: ExtendedMiddlewareData
-    ):
+    ) -> None:
         result = await middlewares.logging_middleware(
             empty_handler, EVENT, middleware_data
         )
 
         assert result == HANDLER_RETURN_VALUE
+
+    async def test_no_event_update_in_middleware_data(
+        self, middleware_data: ExtendedMiddlewareData, logot: Logot
+    ) -> None:
+        event_update = middleware_data.pop('event_update')
+        await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
+
+        logot.assert_not_logged(
+            logged.debug(f"Processing update: {event_update!r}")
+        )
