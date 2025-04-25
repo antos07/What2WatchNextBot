@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import typing
 
@@ -80,3 +82,55 @@ class User(Base):
     def update_last_activity(self) -> None:
         """Update the last activity timestamp to be the current timestamp."""
         self.last_activity_at = datetime.datetime.now()
+
+
+class Genre(Base, unsafe_hash=True):
+    MAX_NAME_LENGTH: typing.ClassVar[int] = 50
+
+    id: orm.Mapped[int] = orm.mapped_column(primary_key=True, init=False)
+    name: orm.Mapped[str] = orm.mapped_column(
+        sa.String(MAX_NAME_LENGTH), index=True, unique=True
+    )
+
+
+class TitleType(Base):
+    MAX_NAME_LENGTH: typing.ClassVar[int] = 15
+
+    id: orm.Mapped[int] = orm.mapped_column(primary_key=True, init=False)
+    name: orm.Mapped[str] = orm.mapped_column(
+        sa.String(MAX_NAME_LENGTH), index=True, unique=True
+    )
+
+
+title_genre_table = sa.Table(
+    "title_genre",
+    Base.metadata,
+    sa.Column(
+        "title_id",
+        sa.Integer,
+        sa.ForeignKey("title.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    sa.Column(
+        "genre_id",
+        sa.Integer,
+        sa.ForeignKey("genre.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+
+class Title(Base):
+    id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
+    title: orm.Mapped[str]
+    type_id: orm.Mapped[int] = orm.mapped_column(
+        sa.ForeignKey(TitleType.id), index=True, init=False, repr=False
+    )
+    type: orm.Mapped[TitleType] = orm.relationship(lazy="joined")
+    start_year: orm.Mapped[int] = orm.mapped_column(index=True)
+    end_year: orm.Mapped[int | None]
+    rating: orm.Mapped[float] = orm.mapped_column(index=True)
+    votes: orm.Mapped[int] = orm.mapped_column(index=True)
+    genres: orm.Mapped[set["Genre"]] = orm.relationship(
+        secondary=title_genre_table, lazy="selectin"
+    )
