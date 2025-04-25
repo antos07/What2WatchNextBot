@@ -1,10 +1,15 @@
-from logging.config import fileConfig  # noqa: I001
+from logging.config import fileConfig
 
+import dotenv
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, pool
 
-import what2watchnextbot.models
-from what2watchnextbot.settings import get_settings
+import app.core.models
+import app.database
+import app.logging
+
+# Load the .env file
+dotenv.load_dotenv(context.get_x_argument(as_dictionary=True).get("env"))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,10 +20,23 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = what2watchnextbot.models.Base.metadata
+# Now use app's logging
+app.logging.init(app.logging.Config())
 
-settings = get_settings()
-config.set_main_option("sqlalchemy.url", str(settings.POSTGRES_DSN))
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+target_metadata = app.core.models.Base.metadata
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def get_sqlalchemy_url() -> str:
+    return app.database.Config().sqlalchemy_url
 
 
 def run_migrations_offline() -> None:
@@ -33,7 +51,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_sqlalchemy_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -52,9 +70,8 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_engine(
+        url=get_sqlalchemy_url(),
         poolclass=pool.NullPool,
     )
 
