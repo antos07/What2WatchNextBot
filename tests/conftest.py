@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator, Callable
+from pathlib import Path
 
 import pydantic
 import pytest
@@ -66,3 +67,8 @@ async def sa_async_session(
 
     async with session_factory() as session:
         yield session
+
+
+@pytest.fixture
+def tmp_file_path(tmp_path: Path) -> Path:
+    return tmp_path / "file"

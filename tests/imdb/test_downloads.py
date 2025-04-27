@@ -12,11 +12,6 @@ from app.imdb.downloads import (
 )
 
 
-@pytest.fixture
-def tmp_file_path(tmp_path: Path) -> Path:
-    return tmp_path / "file"
-
-
 async def test_download_dataset(tmp_file_path: Path, httpx_mock: HTTPXMock) -> None:
     httpx_mock.add_response(
         url="https://datasets.imdbws.com/title.ratings.tsv.gz",
