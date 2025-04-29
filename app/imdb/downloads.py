@@ -1,5 +1,6 @@
 import asyncio
 import enum
+import zlib
 from collections.abc import Iterable
 from os import PathLike
 
@@ -43,6 +44,8 @@ async def _download_dataset(
 ) -> None:
     """Download a dataset using the given httpx client and save it to the given path.
 
+    The dataset will be decompressed on-fly.
+
     :param client: The httpx client to use for the download.
     :param dataset: The dataset to download.
     :param save_to: The path to save the dataset to.
@@ -55,8 +58,17 @@ async def _download_dataset(
             client.stream("get", url) as response,
             aiofiles.open(save_to, "wb") as output_file,
         ):
-            async for chunk in response.aiter_raw(CHUNK_SIZE):
-                await output_file.write(chunk)
+            # The downloaded file is gzip-compressed.
+            dec = zlib.decompressobj(
+                32 + zlib.MAX_WBITS
+            )  # offset 32 to skip the header
+            async for chunk in response.aiter_bytes(CHUNK_SIZE):
+                if decompressed := dec.decompress(chunk):
+                    await output_file.write(decompressed)
+
+            if dec.unused_data:
+                await output_file.write(dec.flush())
+
     except httpx.HTTPError as e:
         raise DownloadError(f"Failed to download {url}") from e
 

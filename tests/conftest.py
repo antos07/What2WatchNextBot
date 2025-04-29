@@ -1,3 +1,4 @@
+import random
 from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 
@@ -12,6 +13,11 @@ from app.core import models
 
 def pytest_addoption(parser: pytest.Parser):
     parser.addoption("--env-file", help="load dotenv file")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def constant_random_seed():
+    random.seed(42)
 
 
 @pytest.fixture(scope="session", autouse=True)

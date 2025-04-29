@@ -93,7 +93,7 @@ class Genre(Base, unsafe_hash=True):
     )
 
 
-class TitleType(Base):
+class TitleType(Base, unsafe_hash=True):
     MAX_NAME_LENGTH: typing.ClassVar[int] = 15
 
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True, init=False)

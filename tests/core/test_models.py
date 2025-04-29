@@ -47,15 +47,16 @@ class TestGenre:
         hash(genre)
 
 
-class TestTitle:
-    @pytest.fixture
-    async def title_type(self, sa_async_session: AsyncSession) -> TitleType:
-        title_type = TitleType(name="movie")
-        sa_async_session.add(title_type)
-        await sa_async_session.commit()
-        await sa_async_session.refresh(title_type)
-        return title_type
+@pytest.fixture
+async def title_type(sa_async_session: AsyncSession) -> TitleType:
+    title_type = TitleType(name="movie")
+    sa_async_session.add(title_type)
+    await sa_async_session.commit()
+    await sa_async_session.refresh(title_type)
+    return title_type
 
+
+class TestTitle:
     @pytest.fixture
     async def title(
         self, sa_async_session: AsyncSession, genre: Genre, title_type: TitleType
@@ -90,3 +91,8 @@ class TestTitle:
 
         assert repr(genre) in representation
         assert repr(title_type) in representation
+
+
+class TestTitleType:
+    def test_hashable(self, title_type: TitleType) -> None:
+        hash(title_type)  # no error should be raised
