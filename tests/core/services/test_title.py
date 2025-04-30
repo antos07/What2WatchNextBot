@@ -44,6 +44,46 @@ class TestGetByIdOrNone:
         assert await title_service.get_by_id_or_none(sa_async_session, 123) is None
 
 
+async def test_get_multiple_by_ids(sa_async_session: AsyncSession) -> None:
+    titles = [
+        Title(
+            id=1,
+            title="test1",
+            type=TitleType(name="movie"),
+            start_year=2000,
+            end_year=None,
+            rating=7,
+            votes=10000,
+            genres=set(),
+        ),
+        Title(
+            id=2,
+            title="test2",
+            type=TitleType(name="tvMiniSeries"),
+            start_year=2001,
+            end_year=None,
+            rating=8,
+            votes=10000,
+            genres=set(),
+        ),
+        Title(
+            id=3,
+            title="test3",
+            type=TitleType(name="tvSeries"),
+            start_year=2002,
+            end_year=None,
+            rating=9,
+            votes=10000,
+            genres=set(),
+        ),
+    ]
+    sa_async_session.add_all(titles)
+
+    actual_titles = await title_service.get_multiple_by_ids(sa_async_session, [1, 2])
+
+    assert set(actual_titles) == set(titles[:2])
+
+
 class TestRefreshFromIMDB:
     @pytest.fixture()
     def title_basics_dataset(self) -> str:

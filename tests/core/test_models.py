@@ -92,6 +92,9 @@ class TestTitle:
         assert repr(genre) in representation
         assert repr(title_type) in representation
 
+    def test_hashable(self, title: Title) -> None:
+        hash(title)  # no error should be raised
+
 
 class TestTitleType:
     def test_hashable(self, title_type: TitleType) -> None:

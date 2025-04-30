@@ -9,6 +9,7 @@ dependencies = [
     "aiogram-loguru>=0.1.2",
     "aiogram[fast,i18n,redis]>=3.19.0",
     "alembic>=1.15.2",
+    "asyncstdlib>=3.13.1",
     "httpx>=0.28.1",
     "loguru>=0.7.3",
     "pydantic-settings>=2.8.1",

@@ -120,7 +120,7 @@ title_genre_table = sa.Table(
 )
 
 
-class Title(Base):
+class Title(Base, unsafe_hash=True):
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
     title: orm.Mapped[str]
     type_id: orm.Mapped[int] = orm.mapped_column(
@@ -132,5 +132,5 @@ class Title(Base):
     rating: orm.Mapped[float] = orm.mapped_column(index=True)
     votes: orm.Mapped[int] = orm.mapped_column(index=True)
     genres: orm.Mapped[set["Genre"]] = orm.relationship(
-        secondary=title_genre_table, lazy="selectin"
+        secondary=title_genre_table, lazy="selectin", hash=False
     )
