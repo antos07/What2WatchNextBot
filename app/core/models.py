@@ -62,6 +62,9 @@ class User(Base):
     MAX_NAME_LENGTH: typing.ClassVar[int] = 64
     MAX_REFLINK_PARAM_LENGTH: typing.ClassVar[int] = 8
 
+    DEFAULT_MINIMUM_MOVIE_RATING: typing.ClassVar[int] = 7
+    DEFAULT_MINIMUM_MOVIE_VOTES: typing.ClassVar[int] = 10_000
+
     id: orm.Mapped[int] = orm.mapped_column(
         sa.BigInteger, primary_key=True, autoincrement=False
     )
@@ -79,9 +82,45 @@ class User(Base):
         default_factory=lambda: datetime.datetime.now()  # a workaround for testing
     )
 
+    minimum_movie_rating: orm.Mapped[int] = orm.mapped_column(
+        default=DEFAULT_MINIMUM_MOVIE_RATING
+    )
+    minimum_movie_votes: orm.Mapped[int] = orm.mapped_column(
+        default=DEFAULT_MINIMUM_MOVIE_VOTES
+    )
+    selected_title_types: orm.Mapped[set[TitleType]] = orm.relationship(
+        secondary=lambda: user_title_type_table,
+        default_factory=set,
+        hash=False,
+        repr=False,
+    )
+    selected_genres: orm.Mapped[set[Genre]] = orm.relationship(
+        secondary=lambda: user_genre_table,
+        default_factory=set,
+        hash=False,
+        repr=False,
+    )
+    requires_all_selected_genres: orm.Mapped[bool] = orm.mapped_column(default=False)
+
     def update_last_activity(self) -> None:
         """Update the last activity timestamp to be the current timestamp."""
         self.last_activity_at = datetime.datetime.now()
+
+    async def select_genre(self, genre: Genre) -> None:
+        """Add a genre to the user's selected genres."""
+        (await self.awaitable_attrs.selected_genres).add(genre)
+
+    async def deselect_genre(self, genre: Genre) -> None:
+        """Remove a genre from the user's selected genres."""
+        (await self.awaitable_attrs.selected_genres).discard(genre)
+
+    async def select_title_type(self, title_type: TitleType) -> None:
+        """Add a title type to the user's selected title types."""
+        (await self.awaitable_attrs.selected_title_types).add(title_type)
+
+    async def deselect_title_type(self, title_type: TitleType) -> None:
+        """Remove a title type from the user's selected title types."""
+        (await self.awaitable_attrs.selected_title_types).discard(title_type)
 
 
 class Genre(Base, unsafe_hash=True):
@@ -134,3 +173,38 @@ class Title(Base, unsafe_hash=True):
     genres: orm.Mapped[set["Genre"]] = orm.relationship(
         secondary=title_genre_table, lazy="selectin", hash=False
     )
+
+
+user_genre_table = sa.Table(
+    "user_genre",
+    Base.metadata,
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    sa.Column(
+        "genre_id",
+        sa.Integer,
+        sa.ForeignKey("genre.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+user_title_type_table = sa.Table(
+    "user_title_type",
+    Base.metadata,
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    sa.Column(
+        "title_type_id",
+        sa.Integer,
+        sa.ForeignKey("titletype.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)

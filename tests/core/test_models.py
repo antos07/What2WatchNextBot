@@ -8,31 +8,6 @@ from app.core.models import Genre, Title, TitleType, User
 from app.testing.constants import RANDOM_DATETIME
 
 
-class TestUser:
-    def test_created_at_defaults_to_current_timestamp(self):
-        with freezegun.freeze_time(RANDOM_DATETIME):
-            user = User(id=1, first_name="test")
-
-        assert user.created_at == RANDOM_DATETIME
-
-    def test_last_activity_at_defaults_to_current_timestamp(
-        self, freezer: freezegun.api.FrozenDateTimeFactory
-    ):
-        freezer.move_to(RANDOM_DATETIME)
-
-        user = User(id=1, first_name="test")
-        assert user.last_activity_at == RANDOM_DATETIME
-
-    def test_update_last_activity(self, freezer: freezegun.api.FrozenDateTimeFactory):
-        user = User(id=1, first_name="test", last_activity_at=RANDOM_DATETIME)
-        new_activity_at = RANDOM_DATETIME + datetime.timedelta(days=1)
-        freezer.move_to(new_activity_at)
-
-        user.update_last_activity()
-
-        assert user.last_activity_at == new_activity_at
-
-
 @pytest.fixture
 async def genre(sa_async_session: AsyncSession) -> Genre:
     genre = Genre(name="test")
@@ -42,11 +17,6 @@ async def genre(sa_async_session: AsyncSession) -> Genre:
     return genre
 
 
-class TestGenre:
-    def test_hashable(self, genre: Genre) -> None:
-        hash(genre)
-
-
 @pytest.fixture
 async def title_type(sa_async_session: AsyncSession) -> TitleType:
     title_type = TitleType(name="movie")
@@ -54,6 +24,94 @@ async def title_type(sa_async_session: AsyncSession) -> TitleType:
     await sa_async_session.commit()
     await sa_async_session.refresh(title_type)
     return title_type
+
+
+class TestUser:
+    def test_created_at_defaults_to_current_timestamp(self) -> None:
+        with freezegun.freeze_time(RANDOM_DATETIME):
+            user = User(id=1, first_name="test")
+
+        assert user.created_at == RANDOM_DATETIME
+
+    def test_last_activity_at_defaults_to_current_timestamp(
+        self, freezer: freezegun.api.FrozenDateTimeFactory
+    ) -> None:
+        freezer.move_to(RANDOM_DATETIME)
+
+        user = User(id=1, first_name="test")
+        assert user.last_activity_at == RANDOM_DATETIME
+
+    def test_update_last_activity(
+        self, freezer: freezegun.api.FrozenDateTimeFactory
+    ) -> None:
+        user = User(id=1, first_name="test", last_activity_at=RANDOM_DATETIME)
+        new_activity_at = RANDOM_DATETIME + datetime.timedelta(days=1)
+        freezer.move_to(new_activity_at)
+
+        user.update_last_activity()
+
+        assert user.last_activity_at == new_activity_at
+
+    @pytest.fixture()
+    async def user(self, sa_async_session: AsyncSession) -> User:
+        user = User(id=1, first_name="test")
+        sa_async_session.add(user)
+        await sa_async_session.flush()
+        await sa_async_session.refresh(user)
+        return user
+
+    async def test_select_genre(
+        self, sa_async_session: AsyncSession, genre: Genre, user: User
+    ) -> None:
+        await user.select_genre(genre)
+
+        assert user.selected_genres == {genre}
+
+    async def test_deselect_genre_with_selected_genre(
+        self, sa_async_session: AsyncSession, genre: Genre, user: User
+    ) -> None:
+        await user.awaitable_attrs.selected_genres  # load selected_genres
+        user.selected_genres = {genre}
+
+        await user.deselect_genre(genre)
+
+        assert user.selected_genres == set()
+
+    async def test_deselect_genre_with_unselected_genre(
+        self, sa_async_session: AsyncSession, genre: Genre, user: User
+    ) -> None:
+        await user.deselect_genre(genre)
+
+        assert user.selected_genres == set()
+
+    async def test_select_title_type(
+        self, sa_async_session: AsyncSession, title_type: TitleType, user: User
+    ) -> None:
+        await user.select_title_type(title_type)
+
+        assert user.selected_title_types == {title_type}
+
+    async def test_deselect_title_type_with_selected_title_type(
+        self, sa_async_session: AsyncSession, title_type: TitleType, user: User
+    ) -> None:
+        await user.awaitable_attrs.selected_title_types  # load selected_title_types
+        user.selected_title_types = {title_type}
+
+        await user.deselect_title_type(title_type)
+
+        assert user.selected_title_types == set()
+
+    async def test_deselect_title_type_with_unselected_title_type(
+        self, sa_async_session: AsyncSession, title_type: TitleType, user: User
+    ) -> None:
+        await user.deselect_title_type(title_type)
+
+        assert user.selected_title_types == set()
+
+
+class TestGenre:
+    def test_hashable(self, genre: Genre) -> None:
+        hash(genre)
 
 
 class TestTitle:
