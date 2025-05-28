@@ -8,8 +8,8 @@ from aiogram.fsm.storage.redis import (
 from aiogram.fsm.strategy import FSMStrategy
 from redis.asyncio import Redis
 
-from app.bot import middlewares
-from app.bot.routers import extra, test
+from app.bot import middlewares, scenes
+from app.bot.routers import common, extra, test
 
 
 class Config(pydantic_settings.BaseSettings, env_prefix="DP_"):
@@ -50,8 +50,10 @@ def create_dispatcher(config: Config, redis: Redis, **kwargs) -> aiogram.Dispatc
     # Setup routers
     dispatcher.include_routers(
         test.router,
+        common.router,
         extra.router,
     )
+    scenes.setup_dispatcher(dispatcher)
 
     # Inject dependencies
     dispatcher["redis"] = redis

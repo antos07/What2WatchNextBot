@@ -1,6 +1,7 @@
 import datetime
 
 import aiogram
+from aiogram.fsm.storage.base import StorageKey
 
 BOT_TOKEN = "12345:AAAAAAAAAAAAA"
 RANDOM_DATETIME = datetime.datetime(2025, 1, 17, 17, 17, 17)
@@ -15,3 +16,5 @@ TITLE_BASICS_DATASET_HEADER = (
     "endYear\truntimeMinutes\tgenres\n"
 )
 TITLE_RATINGS_DATASET_HEADER = "tconst\taverageRating\tnumVotes\n"
+
+STORAGE_KEY = StorageKey(bot_id=0, chat_id=0, user_id=0)

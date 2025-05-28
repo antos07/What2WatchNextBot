@@ -31,12 +31,18 @@ class MockedBot(aiogram.Bot):
         )
 
         self.calls = []
+        self.return_values = []
 
     async def __call__[T](
         self, method: TelegramMethod[T], request_timeout: Optional[int] = None
     ) -> T:
         self.calls.append(method)
-        return mock.Mock()
+        try:
+            return self.return_values[len(self.calls) - 1]
+        except IndexError:
+            returned_mock = mock.Mock()
+            self.return_values.append(returned_mock)
+            return returned_mock
 
     async def download_file(
         self,

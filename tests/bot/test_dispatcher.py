@@ -7,7 +7,7 @@ from aiogram.fsm.storage.redis import RedisEventIsolation, RedisStorage
 from redis.asyncio import Redis
 
 from app.bot import dispatcher, middlewares
-from app.bot.routers import extra, test
+from app.bot.routers import common, extra, test
 
 
 class TestCreateDispatcher:
@@ -15,7 +15,8 @@ class TestCreateDispatcher:
     def patch_routers(self, monkeypatch: pytest.MonkeyPatch):
         # to avoid readding the same router multiple times
         monkeypatch.setattr(test, "router", copy(test.router))
-        monkeypatch.setattr(extra, "router", copy(test.router))
+        monkeypatch.setattr(extra, "router", copy(extra.router))
+        monkeypatch.setattr(common, "router", copy(common.router))
 
     @pytest.fixture
     def default_config(self) -> dispatcher.Config:
