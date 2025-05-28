@@ -45,15 +45,30 @@ class User(Base):
 
     :var id: A user identifier (usually provided by Telegram).
     :var first_name: The first name of the user.
-        Max length is `MAX_NAME_LENGTH` (64) characters.
+        Max length is ``MAX_NAME_LENGTH`` (64) characters.
     :var last_name: Optional. The last name of the user.
-        Max length is `MAX_NAME_LENGTH` (64) characters.
+        Max length is ``MAX_NAME_LENGTH`` (64) characters.
     :var username: Optional. The username of the user.
-        Max length is `MAX_USERNAME_LENGTH` (32) characters.
+        Max length is ``MAX_USERNAME_LENGTH`` (32) characters.
     :var created_at: A timestamp of the first user interaction with the bot.
         Defaults to the current timestamp.
     :var last_activity_at: A timestamp of the last user interaction with the bot.
         Defaults to the current timestamp.
+    :var finished_first_setup: A flag indicating whether the first setup is finished.
+        Defaults to ``False``.
+    :var minimum_movie_rating: The minimum movie rating selected by the user.
+        Defaults to ``DEFAULT_MINIMUM_MOVIE_RATING`` (7).
+    :var minimum_movie_votes: The minimum number of votes selected by the user.
+        Defaults to ``DEFAULT_MINIMUM_MOVIE_VOTES`` (10000).
+    :var selected_title_types: A set of selected title types.
+    :var selected_genres: A set of selected genres.
+    :var requires_all_selected_genres: A flag indicating whether all selected genres
+        are required for the search. Defaults to ``False``.
+    :cvar MAX_USERNAME_LENGTH: The maximum length of the username.
+    :cvar MAX_NAME_LENGTH: The maximum length of the first name and last name.
+    :cvar MAX_REFLINK_PARAM_LENGTH: The maximum length of the reflink parameter.
+    :cvar DEFAULT_MINIMUM_MOVIE_RATING: The default minimum movie rating.
+    :cvar DEFAULT_MINIMUM_MOVIE_VOTES: The default minimum movie votes.
     """
 
     __tablename__ = "user"
@@ -81,6 +96,7 @@ class User(Base):
     last_activity_at: orm.Mapped[datetime.datetime] = orm.mapped_column(
         default_factory=lambda: datetime.datetime.now()  # a workaround for testing
     )
+    finished_first_setup: orm.Mapped[bool] = orm.mapped_column(default=False)
 
     minimum_movie_rating: orm.Mapped[int] = orm.mapped_column(
         default=DEFAULT_MINIMUM_MOVIE_RATING
@@ -124,6 +140,19 @@ class User(Base):
 
 
 class Genre(Base, unsafe_hash=True):
+    """
+    Represents a genre entity in the database.
+
+    This class is used to map a genre entity, containing an identifier and a
+    unique name, to the database. It enforces constraints on the maximum length of
+    the genre name and ensures that it is unique for efficient indexing.
+
+    :cvar MAX_NAME_LENGTH: The maximum allowable length of the genre name.
+    :var id: The unique identifier of the genre, serving as the primary key.
+    :var name: The name of the genre, constrained by a maximum length, indexed,
+        and required to be unique.
+    """
+
     MAX_NAME_LENGTH: typing.ClassVar[int] = 50
 
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True, init=False)
@@ -133,6 +162,21 @@ class Genre(Base, unsafe_hash=True):
 
 
 class TitleType(Base, unsafe_hash=True):
+    """
+    Represents a TitleType entity for use in database models.
+
+    This class defines the structure and constraints for managing
+    title types within the database. The ``TitleType`` object includes
+    attributes such as `id`, which uniquely identifies a title type,
+    and `name`, which specifies the name of the title type, constrained
+    by maximum length and uniqueness.
+
+    :cvar MAX_NAME_LENGTH: Maximum allowed length for the name attribute.
+    :var id: Unique identifier for this title type.
+    :var name: Name of the title type, limited to ``MAX_NAME_LENGTH``
+        characters and must be unique.
+    """
+
     MAX_NAME_LENGTH: typing.ClassVar[int] = 15
 
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True, init=False)
@@ -160,6 +204,25 @@ title_genre_table = sa.Table(
 
 
 class Title(Base, unsafe_hash=True):
+    """
+    Represents a Title in the system.
+
+    This class provides a way to model a title with various attributes such as a unique
+    identifier, associated type, years of activity, user rating, vote count,
+    and linked genres. It is intended to be used as an entity for database storage
+    and retrieval using ORM.
+
+    :var id: The unique identifier for the title.
+    :var title: The name or label of the title.
+    :var type_id: The foreign key linking the title to its type.
+    :var type: The TitleType object associated with the title.
+    :var start_year: The first year when the title was relevant or started.
+    :var end_year: The last year when the title was relevant or ended.
+    :var rating: The user-assigned rating for the title.
+    :var votes: The count of votes received for the title.
+    :var genres: The set of Genre objects associated with the title.
+    """
+
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
     title: orm.Mapped[str]
     type_id: orm.Mapped[int] = orm.mapped_column(
