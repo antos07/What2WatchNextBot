@@ -5,7 +5,6 @@ description = "A template for Telegram bots"
 license = "MIT"
 requires-python = ">=3.13"
 dependencies = [
-    "aiogram-loguru>=0.1.2",
     "aiogram[fast,i18n,redis]>=3.19.0",
     "alembic>=1.15.2",
     "loguru>=0.7.3",
@@ -24,6 +23,7 @@ dev = [
     "pytest-freezer>=0.4.9",
     "ruff>=0.11.5",
     "testfixtures>=8.3.0",
+    "watchfiles>=1.0.5",
 ]
 
 [tool.pytest.ini_options]
@@ -41,7 +41,7 @@ logot_capturer = "logot.loguru.LoguruCapturer"
 
 [tool.ruff.lint]
 select = [
-    # pycodestyle
+    # pycodestyleauiogra
     "E",
     "W",
     # Pyflakes
