@@ -26,7 +26,7 @@ def create_dispatcher(config: Config, redis: Redis, **kwargs) -> aiogram.Dispatc
     """
 
     # Use bot id in key builder to avoid collisions with other bots.
-    key_builder = DefaultKeyBuilder(with_bot_id=True)
+    key_builder = DefaultKeyBuilder(with_bot_id=True, with_destiny=True)
 
     storage = RedisStorage(redis=redis, key_builder=key_builder)
 
