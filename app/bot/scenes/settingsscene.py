@@ -1,13 +1,14 @@
-import aiogram.exceptions
 import aiogram.filters
-from aiogram.fsm.scene import Scene, on
+from aiogram.fsm.scene import on
 from aiogram.utils import formatting as fmt
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from app.bot.scenes._autocleanupscene import AutoCleanupScene
 from app.core import models
+from app.logging import logger
 
 
-class SettingsScene(Scene, state="settings"):
+class SettingsScene(AutoCleanupScene, state="settings"):
     """This is the scene with the main page of a user's settings."""
 
     @on.message.enter()
@@ -16,11 +17,15 @@ class SettingsScene(Scene, state="settings"):
     ) -> None:
         """This method is called when the user enters the scene via a message."""
 
+        logger.debug("Entering settings via a message.")
+
         sent_message = await message.answer(
             **(await self.construct_settings_text(user)).as_kwargs(),
             reply_markup=self.construct_settings_keyboard(),
         )
-        await self.wizard.update_data(sent_message_id=sent_message.message_id)
+        await self.register_for_cleanup(sent_message)
+
+        logger.info("Entered settings")
 
     @on.message.exit()
     async def exit_via_message(
@@ -28,13 +33,12 @@ class SettingsScene(Scene, state="settings"):
     ) -> None:
         """This method is called when the user exits the scene via a message.
         It should clean up the screen from any leftover messages."""
-        sent_message_id: int = await self.wizard.get_value("sent_message_id")
-        try:
-            await bot.delete_message(
-                chat_id=message.chat.id, message_id=sent_message_id
-            )
-        except aiogram.exceptions.TelegramBadRequest:
-            pass
+
+        logger.debug("Exiting settings via a message.")
+
+        await self.cleanup(bot)
+
+        logger.info("Exited settings")
 
     @staticmethod
     async def construct_settings_text(user: models.User) -> fmt.Text:
