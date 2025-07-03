@@ -1,20 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
+import aiogram
+import sqlalchemy.ext.asyncio as sa_async
 from aiogram.dispatcher.middlewares.data import MiddlewareData
+from redis.asyncio import Redis
 
 from app.core import models
 from app.core.services import user as user_service
 from app.logging import logger
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    import aiogram
-    import sqlalchemy.ext.asyncio as sa_async
-    from redis.asyncio import Redis
-
     from app.config import Config
 
 type Handler[T] = Callable[[aiogram.types.TelegramObject, dict], Awaitable[T]]
@@ -62,6 +60,10 @@ async def logging_middleware[T](
             logger.debug("Processing update: {!r}", event_update)
         logger.debug("Event: {!r}", event)
         logger.debug("Event context: {!r}", event_context)
+
+        fsm_state = await data["state"].get_state()
+        logger.debug(f"FSM state: {fsm_state!r}")
+
         return await handler(event, data)
 
 

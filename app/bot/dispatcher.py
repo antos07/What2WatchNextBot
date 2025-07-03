@@ -51,9 +51,10 @@ def create_dispatcher(config: Config, redis: Redis, **kwargs) -> aiogram.Dispatc
     dispatcher.include_routers(
         test.router,
         common.router,
-        extra.router,
     )
     scenes.setup_dispatcher(dispatcher)
+    # Scenes are also routers so trying not to shadow them.
+    dispatcher.include_router(extra.router)
 
     # Inject dependencies
     dispatcher["redis"] = redis
