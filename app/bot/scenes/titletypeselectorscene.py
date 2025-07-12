@@ -45,6 +45,40 @@ class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
 
         logger.info("Handled the back button click. Going back to settings.")
 
+    @on.callback_query(TitleTypeButton.filter())
+    async def handle_title_type_button_click(
+        self,
+        callback_query: aiogram.types.CallbackQuery,
+        user: models.User,
+        session: sa_async.AsyncSession,
+        callback_data: TitleTypeButton,
+    ) -> None:
+        """Handle a user click on a title type button."""
+
+        logger.debug(
+            f"User selected: title_type_id={callback_data.title_type_id!r}, "
+            f"selected={callback_data.selected!r}"
+        )
+
+        title_type = await title_type_service.get_by_id(
+            session, callback_data.title_type_id
+        )
+        if callback_data.selected:
+            await user.select_title_type(title_type)
+        else:
+            await user.deselect_title_type(title_type)
+        await session.commit()
+        logger.info(
+            f"Title type id={callback_data.title_type_id!r}: "
+            f"selected={callback_data.selected!r}."
+        )
+
+        await callback_query.message.edit_text(
+            **self.construct_message_text().as_kwargs(),
+            reply_markup=await self.construct_message_keyboard(user, session),
+        )
+        logger.info("Updated the message")
+
     @staticmethod
     def construct_message_text() -> fmt.Text:
         """Construct the text to be shown to the user in this scene.

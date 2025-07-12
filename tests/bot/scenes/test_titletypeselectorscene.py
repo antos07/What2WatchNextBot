@@ -37,7 +37,9 @@ async def test_enter_via_callback_query(
     async def fake_construct_message_keyboard(user, session):
         return InlineKeyboardMarkup(inline_keyboard=[])
 
-    scene.construct_message_keyboard = fake_construct_message_keyboard
+    scene.construct_message_keyboard = mock.AsyncMock(
+        side_effect=fake_construct_message_keyboard
+    )
 
     await scene.enter_via_callback_query(
         callback_query=fake_tg_callback_query,
@@ -56,6 +58,7 @@ async def test_enter_via_callback_query(
             )
         ],
     )
+    scene.construct_message_keyboard.assert_called_once()
 
 
 async def test_exit_via_message(
@@ -122,3 +125,69 @@ async def test_construct_message_keyboard(
             ],
         ]
     )
+
+
+async def test_handle_title_type_button_clicked_selected(
+    scene: TitleTypeSelectorScene,
+    user: models.User,
+    sa_async_session: AsyncSession,
+    fake_tg_callback_query: CallbackQuery,
+    fake_tg_message: Message,
+    title_type: models.TitleType,
+    mocked_bot: MockedBot,
+) -> None:
+    async def fake_construct_message_keyboard(user, session):
+        return InlineKeyboardMarkup(inline_keyboard=[])
+
+    scene.construct_message_keyboard = mock.AsyncMock(
+        side_effect=fake_construct_message_keyboard
+    )
+
+    callback_data = TitleTypeButton(
+        title_type_id=title_type.id,
+        selected=True,
+    )
+
+    await scene.handle_title_type_button_click(
+        callback_query=fake_tg_callback_query,
+        user=user,
+        callback_data=callback_data,
+        session=sa_async_session,
+    )
+
+    assert user.selected_title_types == {title_type}
+    compare(
+        actual=mocked_bot.calls,
+        expected=[
+            EditMessageText(
+                **fmt.Bold("Title Types:").as_kwargs(),
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+                message_id=fake_tg_message.message_id,
+                chat_id=fake_tg_message.chat.id,
+            )
+        ],
+    )
+    scene.construct_message_keyboard.assert_called_once()
+
+
+async def test_handle_title_type_button_clicked_deselected(
+    scene: TitleTypeSelectorScene,
+    user: models.User,
+    sa_async_session: AsyncSession,
+    fake_tg_callback_query: CallbackQuery,
+    title_type: models.TitleType,
+) -> None:
+    await user.select_title_type(title_type)
+    callback_data = TitleTypeButton(
+        title_type_id=title_type.id,
+        selected=False,
+    )
+
+    await scene.handle_title_type_button_click(
+        callback_query=fake_tg_callback_query,
+        user=user,
+        callback_data=callback_data,
+        session=sa_async_session,
+    )
+
+    assert not user.selected_title_types

@@ -87,3 +87,12 @@ async def user(sa_async_session: sa_async.AsyncSession) -> models.User:
     await sa_async_session.commit()
     await sa_async_session.refresh(user)
     return user
+
+
+@pytest.fixture()
+async def title_type(sa_async_session: sa_async.AsyncSession) -> models.TitleType:
+    title_type = models.TitleType(name="Test Title Type")
+    sa_async_session.add(title_type)
+    await sa_async_session.commit()
+    await sa_async_session.refresh(title_type)
+    return title_type
