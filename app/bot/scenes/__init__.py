@@ -2,6 +2,7 @@ import aiogram
 from aiogram.fsm.scene import SceneRegistry
 
 from .settingsscene import SettingsScene
+from .titletypeselectorscene import TitleTypeSelectorScene
 
 
 # Scenes should be registered to the dispatcher to have the scene middleware
@@ -14,3 +15,4 @@ def setup_dispatcher(dispatcher: aiogram.Dispatcher) -> None:
 
     scene_registry = SceneRegistry(dispatcher)
     scene_registry.register(SettingsScene)
+    scene_registry.register(TitleTypeSelectorScene)

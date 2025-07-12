@@ -1,0 +1,5 @@
+CHECKED_CHECKBOX = "✅"
+UNCHECKED_CHECKBOX = ""
+
+BACK_BUTTON_TEXT = "🔙 Back"
+BACK_BUTTON_CD = "back"

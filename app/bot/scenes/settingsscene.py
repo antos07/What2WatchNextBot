@@ -1,9 +1,11 @@
 import aiogram.filters
+from aiogram import F
 from aiogram.fsm.scene import on
 from aiogram.utils import formatting as fmt
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.scenes._autocleanupscene import AutoCleanupScene
+from app.bot.scenes.titletypeselectorscene import TitleTypeSelectorScene
 from app.core import models
 from app.logging import logger
 
@@ -27,6 +29,21 @@ class SettingsScene(AutoCleanupScene, state="settings"):
 
         logger.info("Entered settings")
 
+    @on.callback_query.enter()
+    async def enter_via_callback_query(
+        self, callback_query: aiogram.types.CallbackQuery, user: models.User
+    ) -> None:
+        """This method is called when the user enters the scene via a message."""
+
+        logger.debug("Entering settings via a callback query.")
+
+        await callback_query.message.edit_text(
+            **(await self.construct_settings_text(user)).as_kwargs(),
+            reply_markup=self.construct_settings_keyboard(),
+        )
+
+        logger.info("Entered settings")
+
     @on.message.exit()
     async def exit_via_message(
         self, message: aiogram.types.Message, bot: aiogram.Bot
@@ -39,6 +56,19 @@ class SettingsScene(AutoCleanupScene, state="settings"):
         await self.cleanup(bot)
 
         logger.info("Exited settings")
+
+    @on.callback_query(F.data == "title_types")
+    async def handle_title_types_button_click(
+        self, callback_query: aiogram.types.CallbackQuery
+    ) -> None:
+        """This method is called when the user clicks the "Title Types"
+        button in the settings."""
+
+        logger.debug("Handling title types button click.")
+
+        await self.wizard.goto(TitleTypeSelectorScene)
+
+        logger.info("Handled title types button click. Going to title type selector.")
 
     @staticmethod
     async def construct_settings_text(user: models.User) -> fmt.Text:
@@ -70,4 +100,8 @@ class SettingsScene(AutoCleanupScene, state="settings"):
         :return: The keyboard to be shown to the user.
         """
 
-        return InlineKeyboardBuilder().as_markup()
+        return (
+            InlineKeyboardBuilder()
+            .button(text="Title Types", callback_data="title_types")
+            .as_markup()
+        )
