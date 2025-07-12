@@ -6,6 +6,7 @@ from unittest import mock
 import aiogram.types
 import pytest
 from aiogram.dispatcher.middlewares.user_context import EventContext
+from aiogram.fsm.context import FSMContext
 from logot import Logot, logged
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
@@ -123,7 +124,7 @@ class TestUpdatedUserProviderMiddleware:
 
 class TestLoggingMiddleware:
     @pytest.fixture
-    def middleware_data(self) -> ExtendedMiddlewareData:
+    def middleware_data(self, fsm_context: FSMContext) -> ExtendedMiddlewareData:
         user = aiogram.types.User(id=1, is_bot=False, first_name="John")
         chat = aiogram.types.Chat(
             id=2, type=aiogram.enums.ChatType.PRIVATE, title="John"
@@ -140,6 +141,7 @@ class TestLoggingMiddleware:
         return {
             "event_update": update,
             "event_context": EventContext(chat, user),
+            "state": fsm_context,
         }
 
     async def test_logging_is_contextualized(
@@ -197,3 +199,12 @@ class TestLoggingMiddleware:
         await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
 
         logot.assert_not_logged(logged.debug(f"Processing update: {event_update!r}"))
+
+    async def test_state_is_logged(
+        self, middleware_data: ExtendedMiddlewareData, logot: Logot
+    ) -> None:
+        await middleware_data["state"].set_state("test")
+
+        await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
+
+        logot.assert_logged(logged.debug("FSM state: 'test'"))
