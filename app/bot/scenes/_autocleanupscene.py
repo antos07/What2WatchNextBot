@@ -65,6 +65,10 @@ class AutoCleanupScene(Scene):
                     f"Failed to clean up messages in chat id={chat_id}. Reason: {e}"
                 )
 
+        await self._set_messages_to_delete([])
+
+        logger.info("Cleaned up messages")
+
     async def _get_messages_to_delete(self) -> set[MessageToDelete]:
         """Load and deserialize messages to delete from the FSM context."""
 
