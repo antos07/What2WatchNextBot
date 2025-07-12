@@ -78,3 +78,12 @@ async def sa_async_session(
 @pytest.fixture
 def tmp_file_path(tmp_path: Path) -> Path:
     return tmp_path / "file"
+
+
+@pytest.fixture
+async def user(sa_async_session: sa_async.AsyncSession) -> models.User:
+    user = models.User(id=1, first_name="John")
+    sa_async_session.add(user)
+    await sa_async_session.commit()
+    await sa_async_session.refresh(user)
+    return user

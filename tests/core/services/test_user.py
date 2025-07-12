@@ -6,15 +6,6 @@ from app.core import models
 from app.core.services import user as user_service
 
 
-@pytest.fixture
-async def user(sa_async_session: sa_async.AsyncSession) -> models.User:
-    user = models.User(id=1, first_name="John")
-    sa_async_session.add(user)
-    await sa_async_session.commit()
-    await sa_async_session.refresh(user)
-    return user
-
-
 class TestGetById:
     async def test_returns_existing_user(
         self, sa_async_session: sa_async.AsyncSession, user: models.User

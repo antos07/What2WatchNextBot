@@ -2,12 +2,13 @@ import aiogram
 import sqlalchemy.ext.asyncio as sa_async
 from aiogram import F
 from aiogram.filters.callback_data import CallbackData
-from aiogram.fsm.scene import Scene, on
+from aiogram.fsm.scene import on
 from aiogram.utils import formatting as fmt
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
 from app.bot import constants
+from app.bot.scenes._autocleanupscene import AutoCleanupScene
 from app.core import models
 from app.core.services import title_type as title_type_service
 
@@ -17,7 +18,7 @@ class TitleTypeButton(CallbackData, prefix="title_type"):
     selected: bool
 
 
-class TitleTypeSelectorScene(Scene, state="title_type_selector"):
+class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
     @on.callback_query.enter()
     async def enter_via_callback_query(
         self,
@@ -82,7 +83,7 @@ class TitleTypeSelectorScene(Scene, state="title_type_selector"):
             button = aiogram.types.InlineKeyboardButton(
                 text=f"{checkbox} {name}",
                 callback_data=TitleTypeButton(
-                    title_type_id=title_type.id, selected=selected
+                    title_type_id=title_type.id, selected=not selected
                 ).pack(),
             )
             row.append(button)
