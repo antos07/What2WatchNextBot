@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import typing
+from functools import cached_property
 
 import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as sa_async
@@ -236,6 +237,14 @@ class Title(Base, unsafe_hash=True):
     genres: orm.Mapped[set["Genre"]] = orm.relationship(
         secondary=title_genre_table, lazy="selectin", hash=False
     )
+
+    @cached_property
+    def imdb_id(self) -> str:
+        return f"tt{self.id:0>7}"
+
+    @cached_property
+    def imdb_url(self) -> str:
+        return f"https://www.imdb.com/title/{self.imdb_id}"
 
 
 user_genre_table = sa.Table(

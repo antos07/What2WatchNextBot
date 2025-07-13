@@ -5,6 +5,7 @@ from .genreselectorscene import GenreSelectorScene
 from .minimummovieratingselectorscene import MinimumMovieRatingSelectorScene
 from .minimummovievotesselectorscene import MinimumMovieVotesSelectorScene
 from .settingsscene import SettingsScene
+from .suggestionscene import SuggestionScene
 from .titletypeselectorscene import TitleTypeSelectorScene
 
 ALL_SCENES = [
@@ -13,6 +14,7 @@ ALL_SCENES = [
     TitleTypeSelectorScene,
     MinimumMovieRatingSelectorScene,
     MinimumMovieVotesSelectorScene,
+    SuggestionScene,
 ]
 
 

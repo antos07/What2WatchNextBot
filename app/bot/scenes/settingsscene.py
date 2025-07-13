@@ -1,6 +1,6 @@
 import aiogram.filters
 from aiogram import F
-from aiogram.fsm.scene import on
+from aiogram.fsm.scene import ScenesManager, on
 from aiogram.utils import formatting as fmt
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -10,6 +10,7 @@ from app.bot.scenes.minimummovieratingselectorscene import (
     MinimumMovieRatingSelectorScene,
 )
 from app.bot.scenes.minimummovievotesselectorscene import MinimumMovieVotesSelectorScene
+from app.bot.scenes.suggestionscene import SuggestionScene
 from app.bot.scenes.titletypeselectorscene import TitleTypeSelectorScene
 from app.core import models
 from app.logging import logger
@@ -120,6 +121,20 @@ class SettingsScene(AutoCleanupScene, state="settings"):
             "Handled minimum votes button click. Going to the minimum votes selector."
         )
 
+    @on.callback_query(F.data == "close")
+    async def handle_close_button_click(
+        self, callback_query: aiogram.types.CallbackQuery, scenes: ScenesManager
+    ) -> None:
+        """This method is called when the user clicks the "Close" button."""
+
+        logger.debug("Handling close button click.")
+
+        await self.cleanup(callback_query.bot)
+        logger.debug("Cleaned up settings")
+
+        await scenes.enter(SuggestionScene)
+        logger.info("Went to suggestions")
+
     @staticmethod
     async def construct_settings_text(user: models.User) -> fmt.Text:
         """Construct the text to be shown to the user in this scene.
@@ -156,6 +171,7 @@ class SettingsScene(AutoCleanupScene, state="settings"):
             .button(text="Genres", callback_data="genres")
             .button(text="Minimum Rating", callback_data="minimum_rating")
             .button(text="Minimum Votes", callback_data="minimum_votes")
-            .adjust(2)
+            .button(text="❌ Close", callback_data="close")
+            .adjust(2, 2, 1)
             .as_markup()
         )
