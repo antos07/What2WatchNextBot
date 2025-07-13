@@ -62,6 +62,11 @@ class MinimumMovieRatingSelectorScene(
 
         logger.debug("Handling a movie rating button click.")
 
+        if user.minimum_movie_rating == callback_data.rating:
+            logger.info("Same value. No update needed")
+            await callback_query.answer()
+            return
+
         user.minimum_movie_rating = callback_data.rating
         await session.commit()
         logger.info(f"Set {user.minimum_movie_rating=}")
