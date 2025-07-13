@@ -62,7 +62,9 @@ async def logging_middleware[T](
         logger.debug("Event context: {!r}", event_context)
 
         fsm_state = await data["state"].get_state()
+        fsm_data = await data["state"].get_data()
         logger.debug(f"FSM state: {fsm_state!r}")
+        logger.debug(f"FSM data: {fsm_data}")
 
         return await handler(event, data)
 

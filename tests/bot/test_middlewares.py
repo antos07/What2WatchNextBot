@@ -200,11 +200,11 @@ class TestLoggingMiddleware:
 
         logot.assert_not_logged(logged.debug(f"Processing update: {event_update!r}"))
 
-    async def test_state_is_logged(
+    async def test_fsm_data_is_logged(
         self, middleware_data: ExtendedMiddlewareData, logot: Logot
     ) -> None:
-        await middleware_data["state"].set_state("test")
+        await middleware_data["state"].update_data(foo="bar")
 
         await middlewares.logging_middleware(empty_handler, EVENT, middleware_data)
 
-        logot.assert_logged(logged.debug("FSM state: 'test'"))
+        logot.assert_logged(logged.debug("FSM data: {'foo': 'bar'}"))
