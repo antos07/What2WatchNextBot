@@ -16,21 +16,6 @@ from app.testing.constants import (
 
 
 class TestGetByIdOrNone:
-    @pytest.fixture
-    def title(self, sa_async_session: AsyncSession) -> Title:
-        title = Title(
-            id=1,
-            title="test",
-            type=TitleType(name="movie"),
-            start_year=2000,
-            end_year=None,
-            rating=7,
-            votes=10000,
-            genres=set(),
-        )
-        sa_async_session.add(title)
-        return title
-
     async def test_returns_title_when_present(
         self, sa_async_session: AsyncSession, title: Title
     ) -> None:
