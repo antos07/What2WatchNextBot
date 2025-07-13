@@ -19,7 +19,7 @@ from app.bot.scenes import TitleTypeSelectorScene
 from app.bot.scenes.titletypeselectorscene import TitleTypeButton
 from app.core import models
 from app.testing.mockedbot import MockedBot
-from app.testing.scenes import BackSceneAction, FakeSceneWizard
+from app.testing.scenes import BackSceneAction, FakeSceneWizard, RetakeSceneAction
 from app.utils import awaitable
 
 
@@ -135,14 +135,8 @@ async def test_handle_title_type_button_clicked_selected(
     fake_tg_message: Message,
     title_type: models.TitleType,
     mocked_bot: MockedBot,
+    scene_wizard: FakeSceneWizard,
 ) -> None:
-    async def fake_construct_message_keyboard(user, session):
-        return InlineKeyboardMarkup(inline_keyboard=[])
-
-    scene.construct_message_keyboard = mock.AsyncMock(
-        side_effect=fake_construct_message_keyboard
-    )
-
     callback_data = TitleTypeButton(
         title_type_id=title_type.id,
         selected=True,
@@ -155,19 +149,11 @@ async def test_handle_title_type_button_clicked_selected(
         session=sa_async_session,
     )
 
-    assert user.selected_title_types == {title_type}
-    compare(
-        actual=mocked_bot.calls,
-        expected=[
-            EditMessageText(
-                **fmt.Bold("Title Types:").as_kwargs(),
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
-                message_id=fake_tg_message.message_id,
-                chat_id=fake_tg_message.chat.id,
-            )
-        ],
-    )
-    scene.construct_message_keyboard.assert_called_once()
+    await sa_async_session.refresh(user)
+    assert await user.awaitable_attrs.selected_title_types == {title_type}
+    assert scene_wizard.scene_actions == [
+        RetakeSceneAction(data={"_with_history": False})
+    ]
 
 
 async def test_handle_title_type_button_clicked_deselected(
@@ -176,6 +162,7 @@ async def test_handle_title_type_button_clicked_deselected(
     sa_async_session: AsyncSession,
     fake_tg_callback_query: CallbackQuery,
     title_type: models.TitleType,
+    scene_wizard: FakeSceneWizard,
 ) -> None:
     await user.select_title_type(title_type)
     callback_data = TitleTypeButton(
@@ -191,3 +178,9 @@ async def test_handle_title_type_button_clicked_deselected(
     )
 
     assert not user.selected_title_types
+
+    await sa_async_session.refresh(user)
+    assert not await user.awaitable_attrs.selected_title_types
+    assert scene_wizard.scene_actions == [
+        RetakeSceneAction(data={"_with_history": False})
+    ]

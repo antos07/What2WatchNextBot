@@ -73,11 +73,8 @@ class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
             f"selected={callback_data.selected!r}."
         )
 
-        await callback_query.message.edit_text(
-            **self.construct_message_text().as_kwargs(),
-            reply_markup=await self.construct_message_keyboard(user, session),
-        )
-        logger.info("Updated the message")
+        # Update the message
+        await self.wizard.retake(_with_history=False)
 
     @staticmethod
     def construct_message_text() -> fmt.Text:

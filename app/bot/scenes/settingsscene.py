@@ -21,6 +21,8 @@ class SettingsScene(AutoCleanupScene, state="settings"):
 
         logger.debug("Entering settings via a message.")
 
+        await self.register_for_cleanup(message)
+
         sent_message = await message.answer(
             **(await self.construct_settings_text(user)).as_kwargs(),
             reply_markup=self.construct_settings_keyboard(),
