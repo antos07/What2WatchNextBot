@@ -22,3 +22,7 @@ async def test_list_all(
     sa_async_session: AsyncSession, genre_list: list[Genre]
 ) -> None:
     assert await genre_service.list_all(sa_async_session) == genre_list
+
+
+async def test_get_by_id(sa_async_session: AsyncSession, genre: Genre) -> None:
+    assert await genre_service.get_by_id(sa_async_session, genre.id) == genre

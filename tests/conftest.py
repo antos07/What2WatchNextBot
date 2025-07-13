@@ -96,3 +96,12 @@ async def title_type(sa_async_session: sa_async.AsyncSession) -> models.TitleTyp
     await sa_async_session.commit()
     await sa_async_session.refresh(title_type)
     return title_type
+
+
+@pytest.fixture()
+async def genre(sa_async_session: sa_async.AsyncSession) -> models.Genre:
+    genre = models.Genre(name="Test Genre")
+    sa_async_session.add(genre)
+    await sa_async_session.commit()
+    await sa_async_session.refresh(genre)
+    return genre

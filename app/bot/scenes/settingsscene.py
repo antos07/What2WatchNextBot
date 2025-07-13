@@ -5,6 +5,7 @@ from aiogram.utils import formatting as fmt
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.scenes._autocleanupscene import AutoCleanupScene
+from app.bot.scenes.genreselectorscene import GenreSelectorScene
 from app.bot.scenes.titletypeselectorscene import TitleTypeSelectorScene
 from app.core import models
 from app.logging import logger
@@ -72,6 +73,19 @@ class SettingsScene(AutoCleanupScene, state="settings"):
 
         logger.info("Handled title types button click. Going to title type selector.")
 
+    @on.callback_query(F.data == "genres")
+    async def handle_genres_button_click(
+        self, callback_query: aiogram.types.CallbackQuery
+    ) -> None:
+        """This method is called when the user clicks the "Genres"
+        button in the settings."""
+
+        logger.debug("Handling genres button click.")
+
+        await self.wizard.goto(GenreSelectorScene)
+
+        logger.info("Handled genres button click. Going to the genre selector.")
+
     @staticmethod
     async def construct_settings_text(user: models.User) -> fmt.Text:
         """Construct the text to be shown to the user in this scene.
@@ -81,9 +95,9 @@ class SettingsScene(AutoCleanupScene, state="settings"):
         """
 
         selected_title_types = await user.awaitable_attrs.selected_title_types
-        selected_title_types = ", ".join(tt.name for tt in selected_title_types)
+        selected_title_types = ", ".join(sorted(tt.name for tt in selected_title_types))
         selected_genres = await user.awaitable_attrs.selected_genres
-        selected_genres = ", ".join(genre.name for genre in selected_genres)
+        selected_genres = ", ".join(sorted(genre.name for genre in selected_genres))
         return fmt.as_section(
             fmt.Bold("⚙ ", fmt.Underline("Settings")),
             "\n",
@@ -105,5 +119,6 @@ class SettingsScene(AutoCleanupScene, state="settings"):
         return (
             InlineKeyboardBuilder()
             .button(text="Title Types", callback_data="title_types")
+            .button(text="Genres", callback_data="genres")
             .as_markup()
         )
