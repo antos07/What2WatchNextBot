@@ -3,6 +3,7 @@ from aiogram.fsm.scene import SceneRegistry
 
 from .genreselectorscene import GenreSelectorScene
 from .minimummovieratingselectorscene import MinimumMovieRatingSelectorScene
+from .minimummovievotesselectorscene import MinimumMovieVotesSelectorScene
 from .settingsscene import SettingsScene
 from .titletypeselectorscene import TitleTypeSelectorScene
 
@@ -11,6 +12,7 @@ ALL_SCENES = [
     SettingsScene,
     TitleTypeSelectorScene,
     MinimumMovieRatingSelectorScene,
+    MinimumMovieVotesSelectorScene,
 ]
 
 

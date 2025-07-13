@@ -13,15 +13,15 @@ from ._autocleanupscene import AutoCleanupScene
 from ._mixins import HandleBackButtonClickMixin
 
 
-class MovieRatingButtonCD(CallbackData, prefix="movie_rating"):
-    rating: float
+class MovieVotesButtonCD(CallbackData, prefix="movie_votes"):
+    votes: int
 
 
-class MinimumMovieRatingSelectorScene(
-    AutoCleanupScene, HandleBackButtonClickMixin, state="movie_rating"
+class MinimumMovieVotesSelectorScene(
+    AutoCleanupScene, HandleBackButtonClickMixin, state="movie_votes"
 ):
     """A scene where a user is presented with a selection of possible
-    movie rating filters.
+    movie votes filters.
     """
 
     @on.callback_query.enter()
@@ -34,25 +34,25 @@ class MinimumMovieRatingSelectorScene(
         :param user: The user who entered the scene.
         """
 
-        logger.debug("Entering the minimum movie rating selector via a callback query.")
+        logger.debug("Entering the minimum movie votes selector via a callback query.")
 
         await callback_query.message.edit_text(
             **self.create_message_text().as_kwargs(),
             reply_markup=self.create_message_keyboard(user),
         )
 
-        logger.info("Entered the minimum movie rating selector.")
+        logger.info("Entered the minimum movie votes selector.")
 
-    @on.callback_query(MovieRatingButtonCD.filter())
-    async def handle_movie_rating_button_click(
+    @on.callback_query(MovieVotesButtonCD.filter())
+    async def handle_movie_votes_button_click(
         self,
         callback_query: aiogram.types.CallbackQuery,
         user: models.User,
         session: AsyncSession,
-        callback_data: MovieRatingButtonCD,
+        callback_data: MovieVotesButtonCD,
     ) -> None:
-        """Handle a user clicking on a movie rating button and update the user's
-        minimum movie rating.
+        """Handle a user clicking on a movie votes button and update the user's
+        minimum movie votes.
 
         :param callback_query: A callback query that triggered the handler.
         :param user: The user who clicked the button.
@@ -60,46 +60,46 @@ class MinimumMovieRatingSelectorScene(
         :param callback_data: Parsed callback data.
         """
 
-        logger.debug("Handling a movie rating button click.")
+        logger.debug("Handling a movie votes button click.")
 
-        user.minimum_movie_rating = callback_data.rating
+        user.minimum_movie_votes = callback_data.votes
         await session.commit()
-        logger.info(f"Set {user.minimum_movie_rating=}")
+        logger.info(f"Set {user.minimum_movie_votes=}")
 
         await self.wizard.retake(_with_history=False)
 
     @staticmethod
     def create_message_text() -> fmt.Text:
-        return fmt.Bold("Minimum Rating:")
+        return fmt.Bold("Minimum Votes:")
 
     def create_message_keyboard(
         self,
         user: models.User,
     ) -> aiogram.types.InlineKeyboardMarkup:
-        possible_ratings = [9, 9.5, 8, 8.5, 7, 7.5, 6, 6.5, 5, 5.5]
-        rating_buttons_builder = InlineKeyboardBuilder()
+        possible_votes = [1_000, 10_000, 50_000, 100_000, 200_000]
+        votes_buttons_builder = InlineKeyboardBuilder()
         any_option_selected = False
 
-        logger.debug(f"{user.minimum_movie_rating=}")
+        logger.debug(f"{user.minimum_movie_votes=}")
 
-        for rating in possible_ratings:
-            selected = user.minimum_movie_rating == rating
+        for votes in possible_votes:
+            selected = user.minimum_movie_votes == votes
             checkbox = get_checkbox(selected)
-            text = f"{checkbox} {rating}"
+            text = f"{checkbox} {votes}"
 
             if selected:
                 any_option_selected = True
 
-            rating_buttons_builder.button(
+            votes_buttons_builder.button(
                 text=text,
-                callback_data=MovieRatingButtonCD(rating=rating),
+                callback_data=MovieVotesButtonCD(votes=votes),
             )
 
-        # Special case - any rating (min rating is 0)
-        selected = user.minimum_movie_rating == 0
-        rating_buttons_builder.button(
+        # Special case - any votes (min votes is 0)
+        selected = user.minimum_movie_votes == 0
+        votes_buttons_builder.button(
             text=f"{get_checkbox(selected)} Any",
-            callback_data=MovieRatingButtonCD(rating=0),
+            callback_data=MovieVotesButtonCD(votes=0),
         )
         if selected:
             any_option_selected = True
@@ -107,17 +107,11 @@ class MinimumMovieRatingSelectorScene(
         if not any_option_selected:
             logger.warning(f"No option selected. {user.minimum_movie_votes=}")
 
-        # Expected shape:
-        # 9 9.5
-        # 8 8.5
-        # ...
-        # Any
-        button_shape = [2] * (len(possible_ratings) // 2) + [1]
-        rating_buttons_builder.adjust(*button_shape)
+        votes_buttons_builder.adjust(len(possible_votes), 1)
 
         return (
             InlineKeyboardBuilder()
-            .attach(rating_buttons_builder)
+            .attach(votes_buttons_builder)
             .row(self.get_back_button())
             .as_markup()
         )
