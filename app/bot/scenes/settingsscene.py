@@ -6,6 +6,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.scenes._autocleanupscene import AutoCleanupScene
 from app.bot.scenes.genreselectorscene import GenreSelectorScene
+from app.bot.scenes.minimummovieratingselectorscene import (
+    MinimumMovieRatingSelectorScene,
+)
 from app.bot.scenes.titletypeselectorscene import TitleTypeSelectorScene
 from app.core import models
 from app.logging import logger
@@ -86,6 +89,21 @@ class SettingsScene(AutoCleanupScene, state="settings"):
 
         logger.info("Handled genres button click. Going to the genre selector.")
 
+    @on.callback_query(F.data == "minimum_rating")
+    async def handle_minimum_rating_button_click(
+        self, callback_query: aiogram.types.CallbackQuery
+    ) -> None:
+        """This method is called when the user clicks the "Minimum Rating"
+        button in the settings."""
+
+        logger.debug("Handling minimum rating button click.")
+
+        await self.wizard.goto(MinimumMovieRatingSelectorScene)
+
+        logger.info(
+            "Handled minimum rating button click. Going to the minimum rating selector."
+        )
+
     @staticmethod
     async def construct_settings_text(user: models.User) -> fmt.Text:
         """Construct the text to be shown to the user in this scene.
@@ -104,7 +122,7 @@ class SettingsScene(AutoCleanupScene, state="settings"):
             fmt.as_list(
                 fmt.as_key_value("Title Types", selected_title_types),
                 fmt.as_key_value("Genres", selected_genres),
-                fmt.as_key_value("Minimum Rating", user.minimum_movie_rating),
+                fmt.as_key_value("Minimum Rating", user.minimum_movie_rating or "any"),
                 fmt.as_key_value("Minimum Votes", user.minimum_movie_votes),
             ),
         )
@@ -120,5 +138,7 @@ class SettingsScene(AutoCleanupScene, state="settings"):
             InlineKeyboardBuilder()
             .button(text="Title Types", callback_data="title_types")
             .button(text="Genres", callback_data="genres")
+            .button(text="Minimum Rating", callback_data="minimum_rating")
+            .adjust(2)
             .as_markup()
         )

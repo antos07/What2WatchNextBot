@@ -98,7 +98,7 @@ class User(Base):
     )
     finished_first_setup: orm.Mapped[bool] = orm.mapped_column(default=False)
 
-    minimum_movie_rating: orm.Mapped[int] = orm.mapped_column(
+    minimum_movie_rating: orm.Mapped[float] = orm.mapped_column(
         default=DEFAULT_MINIMUM_MOVIE_RATING
     )
     minimum_movie_votes: orm.Mapped[int] = orm.mapped_column(

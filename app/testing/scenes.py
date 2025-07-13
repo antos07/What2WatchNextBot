@@ -41,13 +41,13 @@ class FakeSceneWizard:
     navigation methods are stubs that only record that an action was called in
     ``self.scene_actions``.
 
-    :ivar fsm_state: An instance of ``FSMContext`` that is used the same way as in
+    :ivar state: An instance of ``FSMContext`` that is used the same way as in
         the original ``SceneWizard`` (see ``SceneWizard.state``).
     :ivar scene_actions: A list of recorded scene navigation actions.
     """
 
-    def __init__(self, fsm_state: FSMContext):
-        self.fsm_state = fsm_state
+    def __init__(self, state: FSMContext):
+        self.state = state
 
         self.scene_actions: list[SceneAction] = []
 
@@ -97,7 +97,7 @@ class FakeSceneWizard:
             state.
         :return: None
         """
-        await self.fsm_state.set_data(data=data)
+        await self.state.set_data(data=data)
 
     async def get_data(self) -> dict[str, Any]:
         """
@@ -105,10 +105,10 @@ class FakeSceneWizard:
 
         :return: A dictionary containing the data stored in the scene state.
         """
-        return await self.fsm_state.get_data()
+        return await self.state.get_data()
 
     async def get_value(self, key: str, default: Any = None) -> Any:
-        return await self.fsm_state.get_value(key, default)
+        return await self.state.get_value(key, default)
 
     async def update_data(
         self, data: dict[str, Any] | None = None, **kwargs: Any
@@ -122,7 +122,7 @@ class FakeSceneWizard:
         """
         if data:
             kwargs.update(data)
-        return await self.fsm_state.update_data(data=kwargs)
+        return await self.state.update_data(data=kwargs)
 
     async def clear_data(self) -> None:
         """

@@ -1,14 +1,14 @@
 import aiogram
 import sqlalchemy.ext.asyncio as sa_async
-from aiogram import F
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.scene import on
 from aiogram.utils import formatting as fmt
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
-from app.bot import constants
 from app.bot.scenes._autocleanupscene import AutoCleanupScene
+from app.bot.scenes._mixins import HandleBackButtonClickMixin
+from app.bot.utils import get_checkbox
 from app.core import models
 from app.core.services import title_type as title_type_service
 
@@ -18,7 +18,9 @@ class TitleTypeButton(CallbackData, prefix="title_type"):
     selected: bool
 
 
-class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
+class TitleTypeSelectorScene(
+    AutoCleanupScene, HandleBackButtonClickMixin, state="title_type_selector"
+):
     @on.callback_query.enter()
     async def enter_via_callback_query(
         self,
@@ -34,16 +36,6 @@ class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
         )
 
         logger.info("Entered the title type selector")
-
-    @on.callback_query(F.data == constants.BACK_BUTTON_CD)
-    async def handle_back_button_click(
-        self, callback_query: aiogram.types.CallbackQuery
-    ) -> None:
-        logger.debug("Handling the back button click.")
-
-        await self.wizard.back()
-
-        logger.info("Handled the back button click. Going back to settings.")
 
     @on.callback_query(TitleTypeButton.filter())
     async def handle_title_type_button_click(
@@ -85,9 +77,8 @@ class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
 
         return fmt.Bold("Title Types:")
 
-    @staticmethod
     async def construct_message_keyboard(
-        user: models.User, session: sa_async.AsyncSession
+        self, user: models.User, session: sa_async.AsyncSession
     ) -> aiogram.types.InlineKeyboardMarkup:
         """Construct the keyboard to be shown to the user in this scene.
 
@@ -106,9 +97,7 @@ class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
         row: list[aiogram.types.InlineKeyboardButton] = []
         for title_type in all_title_types:
             selected = title_type in selected_title_types
-            checkbox = (
-                constants.CHECKED_CHECKBOX if selected else constants.UNCHECKED_CHECKBOX
-            )
+            checkbox = get_checkbox(selected)
             name = title_type.name.capitalize()
 
             button = aiogram.types.InlineKeyboardButton(
@@ -119,12 +108,4 @@ class TitleTypeSelectorScene(AutoCleanupScene, state="title_type_selector"):
             )
             row.append(button)
 
-        return (
-            InlineKeyboardBuilder()
-            .row(*row)
-            .button(
-                text=constants.BACK_BUTTON_TEXT, callback_data=constants.BACK_BUTTON_CD
-            )
-            .adjust(len(row), 1)
-            .as_markup()
-        )
+        return InlineKeyboardBuilder().row(*row).row(self.get_back_button()).as_markup()

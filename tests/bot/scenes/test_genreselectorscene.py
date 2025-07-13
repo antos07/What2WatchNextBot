@@ -1,4 +1,5 @@
 from typing import cast
+from unittest import mock
 
 import pytest
 from aiogram.fsm.scene import SceneWizard
@@ -173,3 +174,13 @@ async def test_handle_genre_button_clicked_deselected(
     assert scene_wizard.scene_actions == [
         RetakeSceneAction(data={"_with_history": False})
     ]
+
+
+async def test_exit_via_message(
+    scene: GenreSelectorScene, mocked_bot: MockedBot, fake_tg_message: Message
+) -> None:
+    scene.cleanup = mock.AsyncMock()
+
+    await scene.exit_via_message(fake_tg_message, mocked_bot)
+
+    scene.cleanup.assert_awaited_once_with(mocked_bot)
