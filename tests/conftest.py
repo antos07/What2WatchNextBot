@@ -109,7 +109,9 @@ async def genre(sa_async_session: sa_async.AsyncSession) -> models.Genre:
 
 @pytest.fixture
 async def title(
-    sa_async_session: sa_async.AsyncSession, title_type: models.TitleType
+    sa_async_session: sa_async.AsyncSession,
+    title_type: models.TitleType,
+    genre: models.Genre,
 ) -> models.Title:
     title = models.Title(
         id=1,
@@ -119,7 +121,7 @@ async def title(
         end_year=None,
         rating=7,
         votes=10000,
-        genres=set(),
+        genres={genre},
     )
     sa_async_session.add(title)
     await sa_async_session.commit()

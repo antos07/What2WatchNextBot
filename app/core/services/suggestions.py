@@ -22,6 +22,22 @@ async def suggest_title(
         models.Title.votes >= user.minimum_movie_votes,
     )
 
-    # TODO: selected genres, selected types
+    # Only selected types
+    stmt = stmt.join(models.User.selected_title_types).join(
+        models.Title, models.Title.type_id == models.TitleType.id
+    )
+
+    # At least one of the selected genres.
+    stmt = stmt.where(
+        models.Title.id.in_(
+            sa.select(models.title_genre_table.c.title_id)
+            .join(
+                models.user_genre_table,
+                models.user_genre_table.c.genre_id
+                == models.title_genre_table.c.genre_id,
+            )
+            .where(models.user_genre_table.c.user_id == user.id)
+        )
+    )
 
     return await session.scalar(stmt)
