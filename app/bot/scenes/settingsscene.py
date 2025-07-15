@@ -129,6 +129,9 @@ class SettingsScene(AutoCleanupScene, state="settings"):
 
         logger.debug("Handling close button click.")
 
+        # We want to delete the message even if we got here via a callback query.
+        await self.register_for_cleanup(callback_query.message)
+
         await self.cleanup(callback_query.bot)
         logger.debug("Cleaned up settings")
 
