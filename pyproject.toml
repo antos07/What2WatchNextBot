@@ -6,7 +6,6 @@ license = "MIT"
 requires-python = ">=3.13"
 dependencies = [
     "aiofiles>=24.1.0",
-    "aiogram-loguru>=0.1.2",
     "aiogram[fast,i18n,redis]>=3.19.0",
     "alembic>=1.15.2",
     "asyncstdlib>=3.13.1",
