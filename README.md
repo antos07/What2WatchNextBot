@@ -28,21 +28,23 @@ All the database stuff (including filtering) uses
 [SQLAlchemy 2.0](https://docs.sqlalchemy.org/en/20/index.html)
 and [PostgreSQL](https://www.postgresql.org/) (however, it may actually work with some other databases
 as well, due to SQLAlchemy).
-It also uses [Redis](https://redis.io) for state management (that's an internal thing of Aiogram)
-and [Pandas](https://pandas.pydata.org/) to import the dataset.
+It also uses [Redis](https://redis.io) for state management (that's an internal thing of Aiogram).
 
 ## Installation
 
-You will need Python 3.13, modern PostgreSQL, Redis and [Poetry](https://python-poetry.org/docs/)
+You will need a modern PostgreSQL, Redis and [uv](https://docs.astral.sh/uv/)
 installed.
 
 Clone the repository (but you probably already knew this part)
 
       git clone https://github.com/antos07/What2WatchNextBot.git
 
-And now let Poetry do its work
+Copy `.env.template` to `.env` and fill it in.
 
-      poetry install
+You can now run the bot in polling mode using
+    
+    uv run -m app.entrypoints.bot_polling
 
-After that, the installation is completed, and you can run the CLI using `python -m what2watchnextbot`
-or simply `what2watchnextbot` (you may have to use `poetry run` or `poetry shell` though).
+### Importing IMDB dataset
+
+    uv run -m app.entrypoints.imdb_import
