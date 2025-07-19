@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
+    environment: Deployment
+
     env:
       SSH_KEY_PATH: ${{ github.workspace }}/../private.key
 
