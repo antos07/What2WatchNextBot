@@ -5,10 +5,13 @@ on:
       - CI
     types:
       - completed
+    branches:
+      - default
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
       SSH_KEY_PATH: ${{ github.workspace }}/../private.key

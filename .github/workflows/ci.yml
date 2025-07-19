@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ $default-branch ]
+    branches: [ default ]
   pull_request:
-    branches: [ $default-branch ]
+    branches: [ default ]
 
 permissions:
   contents: read
