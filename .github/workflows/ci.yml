@@ -26,10 +26,10 @@ jobs:
         run: uv sync --locked --dev
 
       - name: Check formatting
-        run: ruff format --check
+        run: uv run ruff format --check
 
       - name: Run linter
-        run: ruff check
+        run: uv run ruff check
 
   tests:
 
