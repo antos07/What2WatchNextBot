@@ -21,6 +21,10 @@ class GenreButtonCD(CallbackData, prefix="genre"):
     selected: bool
 
 
+class GenreCombinatorButtonCD(CallbackData, prefix="genre_combinator"):
+    require_all: bool
+
+
 class GenreSelectorScene(AutoCleanupScene, HandleBackButtonClickMixin, state="genre"):
     @on.callback_query.enter()
     async def enter_via_callback_query(
@@ -66,6 +70,31 @@ class GenreSelectorScene(AutoCleanupScene, HandleBackButtonClickMixin, state="ge
         # Update the message
         await self.wizard.retake(_with_history=False)
 
+    @on.callback_query(GenreCombinatorButtonCD.filter())
+    async def handle_genre_combinator_button_click(
+        self,
+        callback_query: aiogram.types.CallbackQuery,
+        user: models.User,
+        session: AsyncSession,
+        callback_data: GenreCombinatorButtonCD,
+    ) -> None:
+        """Handle a user click on a genre combinator button.
+
+        :param callback_query: A callback query that triggered the handler.
+        :param user: The user who clicked the button.
+        :param session: An SQLAlchemy session for this event.
+        :param callback_data: Parsed callback data.
+        """
+
+        logger.debug(f"User selected: require_all={callback_data.require_all!r}.")
+
+        user.requires_all_selected_genres = callback_data.require_all
+        await session.commit()
+        logger.info(f"Genre combinator: require_all={callback_data.require_all!r}.")
+
+        # Update the message
+        await self.wizard.retake(_with_history=False)
+
     @staticmethod
     def construct_message_text() -> fmt.Text:
         return fmt.Bold("Genres:")
@@ -95,9 +124,18 @@ class GenreSelectorScene(AutoCleanupScene, HandleBackButtonClickMixin, state="ge
                 callback_data=GenreButtonCD(genre_id=genre.id, selected=not selected),
             )
 
+        genre_combinator_builder = InlineKeyboardBuilder().button(
+            text=f"Require {'all' if user.requires_all_selected_genres else 'any'} "
+            f"selected",
+            callback_data=GenreCombinatorButtonCD(
+                require_all=not user.requires_all_selected_genres
+            ),
+        )
+
         return (
             InlineKeyboardBuilder()
             .attach(genre_button_builder.adjust(3))
+            .attach(genre_combinator_builder)
             .row(self.get_back_button())
             .as_markup()
         )

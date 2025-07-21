@@ -150,6 +150,7 @@ class SettingsScene(AutoCleanupScene, state="settings"):
         selected_title_types = ", ".join(sorted(tt.name for tt in selected_title_types))
         selected_genres = await user.awaitable_attrs.selected_genres
         selected_genres = ", ".join(sorted(genre.name for genre in selected_genres))
+        selected_genres += f" ({'all' if user.requires_all_selected_genres else 'any'})"
         return fmt.as_section(
             fmt.Bold("⚙ ", fmt.Underline("Settings")),
             "\n",
