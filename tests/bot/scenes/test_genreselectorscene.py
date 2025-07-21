@@ -16,7 +16,7 @@ from testfixtures import compare
 
 from app.bot import constants
 from app.bot.scenes import GenreSelectorScene
-from app.bot.scenes.genreselectorscene import GenreButtonCD
+from app.bot.scenes.genreselectorscene import GenreButtonCD, GenreCombinatorButtonCD
 from app.core import models
 from app.testing.mockedbot import MockedBot
 from app.testing.scenes import BackSceneAction, FakeSceneWizard, RetakeSceneAction
@@ -111,6 +111,12 @@ async def test_construct_message_keyboard(
             ],
             [
                 InlineKeyboardButton(
+                    text="Require any selected",
+                    callback_data=GenreCombinatorButtonCD(require_all=True).pack(),
+                )
+            ],
+            [
+                InlineKeyboardButton(
                     text=constants.BACK_BUTTON_TEXT,
                     callback_data=constants.BACK_BUTTON_CD,
                 )
@@ -171,6 +177,34 @@ async def test_handle_genre_button_clicked_deselected(
 
     await sa_async_session.refresh(user)
     assert not await user.awaitable_attrs.selected_title_types
+    assert scene_wizard.scene_actions == [
+        RetakeSceneAction(data={"_with_history": False})
+    ]
+
+
+@pytest.mark.parametrize("require_all", [True, False])
+async def test_handle_genre_combinator_button_clicked(
+    require_all: bool,
+    scene: GenreSelectorScene,
+    user: models.User,
+    sa_async_session: AsyncSession,
+    fake_tg_callback_query: CallbackQuery,
+    fake_tg_message: Message,
+    genre: models.Genre,
+    mocked_bot: MockedBot,
+    scene_wizard: FakeSceneWizard,
+) -> None:
+    callback_data = GenreCombinatorButtonCD(require_all=require_all)
+
+    await scene.handle_genre_combinator_button_click(
+        callback_query=fake_tg_callback_query,
+        user=user,
+        callback_data=callback_data,
+        session=sa_async_session,
+    )
+
+    await sa_async_session.refresh(user)
+    assert user.requires_all_selected_genres == require_all
     assert scene_wizard.scene_actions == [
         RetakeSceneAction(data={"_with_history": False})
     ]
