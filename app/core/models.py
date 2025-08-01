@@ -12,6 +12,32 @@ from app.core import constants
 from app.utils import utcnow
 
 
+class _AwareDateTime(sa.TypeDecorator):
+    """Same as ``sa.DateTime`` but adds UTC timezone if missing."""
+
+    impl = sa.DateTime
+
+    def __init__(self, *args, **kwargs) -> None:
+        kwargs["timezone"] = True
+        super().__init__(*args, **kwargs)
+
+    def process_bind_param[T: datetime.datetime | None](
+        self, value: T, dialect: sa.Dialect
+    ) -> T:
+        # Ensure datetime is in UTC and timezone-aware before storing
+        if value is not None and value.tzinfo is None:
+            raise ValueError("Naive datetime passed to AwareDateTime")
+        return value
+
+    def process_result_value[T: datetime.datetime | None](
+        self, value: T, dialect: sa.Dialect
+    ) -> T:
+        # Add UTC tzinfo on fetch if missing
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=datetime.UTC)
+        return value
+
+
 class Base(orm.MappedAsDataclass, orm.DeclarativeBase, sa_async.AsyncAttrs):
     """A base class for all models.
 
@@ -96,10 +122,12 @@ class User(Base):
         sa.String(MAX_USERNAME_LENGTH), default=None
     )
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(
-        default_factory=lambda: utcnow()  # a workaround for testing
+        _AwareDateTime,
+        default_factory=lambda: utcnow(),  # a workaround for testing
     )
     last_activity_at: orm.Mapped[datetime.datetime] = orm.mapped_column(
-        default_factory=lambda: utcnow()  # a workaround for testing
+        _AwareDateTime,
+        default_factory=lambda: utcnow(),  # a workaround for testing
     )
     finished_first_setup: orm.Mapped[bool] = orm.mapped_column(default=False)
 
@@ -298,7 +326,9 @@ class TitleSkip(Base):
         repr=False, back_populates="skipped_titles"
     )
     is_watched: orm.Mapped[bool] = orm.mapped_column(default=False)
-    expires_at: orm.Mapped[datetime.datetime | None] = orm.mapped_column(default=None)
+    expires_at: orm.Mapped[datetime.datetime | None] = orm.mapped_column(
+        _AwareDateTime(), default=None
+    )
 
 
 user_genre_table = sa.Table(
