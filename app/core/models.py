@@ -9,6 +9,7 @@ import sqlalchemy.ext.asyncio as sa_async
 import sqlalchemy.orm as orm
 
 from app.core import constants
+from app.utils import utcnow
 
 
 class Base(orm.MappedAsDataclass, orm.DeclarativeBase, sa_async.AsyncAttrs):
@@ -95,10 +96,10 @@ class User(Base):
         sa.String(MAX_USERNAME_LENGTH), default=None
     )
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(
-        default_factory=lambda: datetime.datetime.now()  # a workaround for testing
+        default_factory=lambda: utcnow()  # a workaround for testing
     )
     last_activity_at: orm.Mapped[datetime.datetime] = orm.mapped_column(
-        default_factory=lambda: datetime.datetime.now()  # a workaround for testing
+        default_factory=lambda: utcnow()  # a workaround for testing
     )
     finished_first_setup: orm.Mapped[bool] = orm.mapped_column(default=False)
 
@@ -127,7 +128,7 @@ class User(Base):
 
     def update_last_activity(self) -> None:
         """Update the last activity timestamp to be the current timestamp."""
-        self.last_activity_at = datetime.datetime.now()
+        self.last_activity_at = utcnow()
 
     async def select_genre(self, genre: Genre) -> None:
         """Add a genre to the user's selected genres."""
@@ -163,7 +164,7 @@ class User(Base):
             skip = TitleSkip(title=title, user=self)
             skipped_titles.append(skip)
 
-        skip.expires_at = datetime.datetime.now() + expires_after
+        skip.expires_at = utcnow() + expires_after
 
 
 class Genre(Base, unsafe_hash=True):

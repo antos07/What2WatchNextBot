@@ -3,6 +3,7 @@ import sqlalchemy.ext.asyncio as sa_async
 
 import app.core.models as models
 import app.core.services.title as title_service
+from app.utils import utcnow
 
 
 def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
@@ -57,7 +58,7 @@ def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
     skipped_titles_ids = sa.select(models.TitleSkip.title_id).where(
         models.TitleSkip.user_id == user.id,
         models.TitleSkip.expires_at.is_(None)
-        | (models.TitleSkip.expires_at > sa.func.now()),
+        | (models.TitleSkip.expires_at > utcnow()),
     )
     stmt = stmt.where(models.Title.id.not_in(skipped_titles_ids))
 

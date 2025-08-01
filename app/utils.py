@@ -1,3 +1,6 @@
+import datetime
+
+
 async def awaitable[T](arg: T) -> T:
     """Transform any arg to an awaitable.
 
@@ -7,3 +10,8 @@ async def awaitable[T](arg: T) -> T:
     """
 
     return arg
+
+
+def utcnow() -> datetime.datetime:
+    """Return the current UTC time."""
+    return datetime.datetime.now(datetime.UTC)

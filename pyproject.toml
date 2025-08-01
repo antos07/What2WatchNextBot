@@ -55,6 +55,8 @@ select = [
     "B",
     # isort
     "I",
+    # flake8-datetimetz: forces to use provide in datetime objects
+    "DTZ",
 ]
 
 [tool.ruff.lint.isort]

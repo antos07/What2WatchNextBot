@@ -1,4 +1,3 @@
-import datetime
 from collections.abc import Callable
 from contextlib import suppress
 from unittest import mock
@@ -14,6 +13,7 @@ from app.bot import middlewares
 from app.bot.middlewares import ExtendedMiddlewareData
 from app.core import models
 from app.logging import logger
+from app.utils import utcnow
 
 EVENT = mock.sentinel.event
 HANDLER_RETURN_VALUE = mock.sentinel.handler_return_value
@@ -131,7 +131,7 @@ class TestLoggingMiddleware:
         )
         message = aiogram.types.Message(
             message_id=3,
-            date=datetime.datetime.now(),
+            date=utcnow(),
             chat=chat,
             from_user=user,
             text="Test",
