@@ -1,8 +1,9 @@
 import pytest
+from freezegun.api import FrozenDateTimeFactory
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.core.services.suggestions as suggestion_service
-from app.core import models
+from app.core import constants, models
 
 
 @pytest.fixture()
@@ -192,3 +193,31 @@ async def test_suggest_title_all_selected_genres_not_satisfied(
 
     suggestion = await suggestion_service.suggest_title(sa_async_session, user)
     assert suggestion is None
+
+
+async def test_suggest_title_excludes_skipped_titles(
+    sa_async_session: AsyncSession,
+    user_without_filters: models.User,
+    title: models.Title,
+) -> None:
+    user = user_without_filters
+    await user.skip_title(title)
+
+    suggestion = await suggestion_service.suggest_title(sa_async_session, user)
+    assert suggestion is None
+
+
+async def test_suggest_title_doesnt_exclude_skipped_titles_after_timeout(
+    sa_async_session: AsyncSession,
+    user_without_filters: models.User,
+    title: models.Title,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    user = user_without_filters
+
+    # Make the skip expired
+    await user.skip_title(title)
+    freezer.move_to(2 * constants.SKIPPED_TITLE_TIMEOUT)
+
+    suggestion = await suggestion_service.suggest_title(sa_async_session, user)
+    assert suggestion == title

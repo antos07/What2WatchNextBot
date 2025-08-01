@@ -8,6 +8,8 @@ import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as sa_async
 import sqlalchemy.orm as orm
 
+from app.core import constants
+
 
 class Base(orm.MappedAsDataclass, orm.DeclarativeBase, sa_async.AsyncAttrs):
     """A base class for all models.
@@ -65,6 +67,7 @@ class User(Base):
     :var selected_genres: A set of selected genres.
     :var requires_all_selected_genres: A flag indicating whether all selected genres
         are required for the search. Defaults to ``False``.
+    :var skipped_titles: A list of titles skipped by the user.
     :cvar MAX_USERNAME_LENGTH: The maximum length of the username.
     :cvar MAX_NAME_LENGTH: The maximum length of the first name and last name.
     :cvar MAX_REFLINK_PARAM_LENGTH: The maximum length of the reflink parameter.
@@ -118,6 +121,9 @@ class User(Base):
         repr=False,
     )
     requires_all_selected_genres: orm.Mapped[bool] = orm.mapped_column(default=False)
+    skipped_titles: orm.Mapped[list[TitleSkip]] = orm.relationship(
+        default_factory=list, back_populates="user"
+    )
 
     def update_last_activity(self) -> None:
         """Update the last activity timestamp to be the current timestamp."""
@@ -138,6 +144,26 @@ class User(Base):
     async def deselect_title_type(self, title_type: TitleType) -> None:
         """Remove a title type from the user's selected title types."""
         (await self.awaitable_attrs.selected_title_types).discard(title_type)
+
+    async def skip_title(
+        self,
+        title: Title,
+        expires_after: datetime.timedelta = constants.SKIPPED_TITLE_TIMEOUT,
+    ) -> None:
+        """Skip a title."""
+        skipped_titles = await self.awaitable_attrs.skipped_titles
+
+        try:
+            skip = next(
+                skip
+                for skip in skipped_titles
+                if skip.title_id == title.id and skip.user_id == self.id
+            )
+        except StopIteration:
+            skip = TitleSkip(title=title, user=self)
+            skipped_titles.append(skip)
+
+        skip.expires_at = datetime.datetime.now() + expires_after
 
 
 class Genre(Base, unsafe_hash=True):
@@ -245,6 +271,33 @@ class Title(Base, unsafe_hash=True):
     @cached_property
     def imdb_url(self) -> str:
         return f"https://www.imdb.com/title/{self.imdb_id}"
+
+
+class TitleSkip(Base):
+    """Represents a Title skipped by the user.
+
+    :var title_id: The id of the title that is skipped. It's part of the primary key
+        in the database, and it's a foreign key to the ``title`` table.
+    :var title: The title that is skipped.
+    :var user_id: The id of the user that skips the title. It's part of the primary key
+        in the database, and it's a foreign key to the ``user`` table.
+    :var user: The user that skips the title.
+    :var is_watched: A flag indicating whether the user has watched the title.
+    :var expires_at: The timestamp when the skip expires.
+    """
+
+    title_id: orm.Mapped[int] = orm.mapped_column(
+        sa.ForeignKey(Title.id), primary_key=True, init=False
+    )
+    title: orm.Mapped[Title] = orm.relationship(repr=False)
+    user_id: orm.Mapped[int] = orm.mapped_column(
+        sa.ForeignKey(User.id), primary_key=True, init=False
+    )
+    user: orm.Mapped[User] = orm.relationship(
+        repr=False, back_populates="skipped_titles"
+    )
+    is_watched: orm.Mapped[bool] = orm.mapped_column(default=False)
+    expires_at: orm.Mapped[datetime.datetime | None] = orm.mapped_column(default=None)
 
 
 user_genre_table = sa.Table(

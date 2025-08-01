@@ -2,6 +2,7 @@ import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as sa_async
 
 import app.core.models as models
+import app.core.services.title as title_service
 
 
 def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
@@ -52,6 +53,14 @@ def _build_filtered_movie_ids_stmt(user: models.User) -> sa.Select:
             sa.func.count(models.Genre.id) >= total_number_of_selected_genres_subquery
         )
 
+    # Filter skipped titles
+    skipped_titles_ids = sa.select(models.TitleSkip.title_id).where(
+        models.TitleSkip.user_id == user.id,
+        models.TitleSkip.expires_at.is_(None)
+        | (models.TitleSkip.expires_at > sa.func.now()),
+    )
+    stmt = stmt.where(models.Title.id.not_in(skipped_titles_ids))
+
     return stmt
 
 
@@ -73,3 +82,18 @@ async def suggest_title(
     )
 
     return await session.scalar(stmt)
+
+
+async def skip_suggested_title(
+    session: sa_async.AsyncSession, user: models.User, title_id: int
+) -> None:
+    """Skip a suggested title for a user.
+
+    :param session: An SQLAlchemy session to interact with the database.
+    :param user: The user that wants to skip a suggested title.
+    :param title_id: The ID of the title to skip.
+    """
+
+    title = await title_service.get_by_id_or_none(session, title_id)
+    if title:
+        await user.skip_title(title)

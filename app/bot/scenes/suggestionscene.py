@@ -81,6 +81,14 @@ class SuggestionScene(Scene, state="suggestions"):
 
         logger.debug("Handling a new suggestion button click.")
 
+        # Skip the old suggestion
+        last_suggested_title_id = await self.wizard.get_value("last_suggested_title_id")
+        await suggestion_service.skip_suggested_title(
+            session, user, last_suggested_title_id
+        )
+        await session.commit()
+        logger.info(f"Skipped the old suggestion with id={last_suggested_title_id}")
+
         # Make the old suggestion non-interactive
         try:
             await callback_query.message.edit_reply_markup()
@@ -105,9 +113,8 @@ class SuggestionScene(Scene, state="suggestions"):
         await scenes.enter(SETTINGS_SCENE)
         logger.info("Went to settings")
 
-    @staticmethod
     async def send_suggestion(
-        bot: aiogram.Bot, session: AsyncSession, user: models.User
+        self, bot: aiogram.Bot, session: AsyncSession, user: models.User
     ) -> None:
         """Send a new suggestion to a user or notify that no more suggestion available.
 
@@ -138,6 +145,8 @@ class SuggestionScene(Scene, state="suggestions"):
                 "",
                 fmt.TextLink("IMDB", url=suggestion.imdb_url),
             )
+
+            await self.wizard.update_data(last_suggested_title_id=suggestion.id)
         else:
             logger.debug("No suggestions")
             text = fmt.Text(

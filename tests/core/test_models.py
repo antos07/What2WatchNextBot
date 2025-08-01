@@ -4,7 +4,8 @@ import freezegun
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models import Genre, Title, TitleType, User
+from app.core.constants import SKIPPED_TITLE_TIMEOUT
+from app.core.models import Genre, Title, TitleSkip, TitleType, User
 from app.testing.constants import RANDOM_DATETIME
 
 
@@ -107,6 +108,42 @@ class TestUser:
         await user.deselect_title_type(title_type)
 
         assert user.selected_title_types == set()
+
+    @freezegun.freeze_time(RANDOM_DATETIME)
+    async def test_skip_title_when_not_skipped_yet(
+        self, sa_async_session: AsyncSession, title: Title, user: User
+    ) -> None:
+        await user.skip_title(title)
+
+        await sa_async_session.refresh(user)
+
+        skip = await sa_async_session.get_one(
+            TitleSkip, {"user_id": user.id, "title_id": title.id}
+        )
+        assert skip.expires_at == RANDOM_DATETIME + SKIPPED_TITLE_TIMEOUT
+        assert not skip.is_watched
+
+    @freezegun.freeze_time(RANDOM_DATETIME)
+    async def test_skip_title_when_already_skipped(
+        self, sa_async_session: AsyncSession, title: Title, user: User
+    ) -> None:
+        sa_async_session.add(
+            TitleSkip(
+                title=title,
+                user=user,
+                expires_at=RANDOM_DATETIME + datetime.timedelta(minutes=2),
+            )
+        )
+
+        await user.skip_title(title)
+
+        await sa_async_session.refresh(user)
+
+        skip = await sa_async_session.get_one(
+            TitleSkip, {"user_id": user.id, "title_id": title.id}
+        )
+        assert skip.expires_at == RANDOM_DATETIME + SKIPPED_TITLE_TIMEOUT
+        assert not skip.is_watched
 
 
 class TestGenre:
